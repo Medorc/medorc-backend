@@ -20,7 +20,7 @@ This repository contains the backend server for the Medorc application. It's res
 
 * **Backend**: Node.js, Express.js
 * **Database**: PostgreSQL
-* **ORM**: **Prisma**
+* **ORM**: Prisma
 * **Authentication**: JSON Web Tokens (JWT)
 * **Containerization**: Docker
 
