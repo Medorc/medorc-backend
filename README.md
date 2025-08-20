@@ -35,6 +35,8 @@ This repository contains the backend server for the Medorc application. It's res
 medorc-backend/
 ├── .github/
 │   └── workflows/          # CI/CD pipeline
+├── docs/
+│   └── ERD.png  
 ├── prisma/
 │   ├── schema.prisma       # Your Prisma schema file
 │   └── migrations/         # Database migration history
