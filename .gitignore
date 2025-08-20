@@ -1,0 +1,6 @@
+# ## IDE / Editor Directories ##
+.idea/
+# ## Environment Variables ##
+.env.local
+# ## Dependencies ##
+node_modules/
