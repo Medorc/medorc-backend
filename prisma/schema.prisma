@@ -1,0 +1,226 @@
+// schema.prisma
+
+// This is your Prisma schema file.
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// 1. Define your data source and generator blocks.
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 2. Define your data models.
+
+// =========================
+// PATIENTS & RELATED TABLES
+// =========================
+
+model patients {
+  patient_id                 String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                      String                         @unique @db.VarChar(255)
+  password                   String                         @db.Text
+  phone_no                   String?                        @db.VarChar(15)
+  shc_code                   String                         @unique @default(dbgenerated("LEFT(md5(gen_random_uuid()::text), 16)")) @db.Text
+  qr_code                    String                         @unique @default(dbgenerated("LEFT(md5(gen_random_uuid()::text), 16)")) @db.Text
+  visibility                 Boolean?                       @default(false)
+  full_name                  String?                        @db.VarChar(50)
+  gender                     String?                        @db.VarChar(10)
+  photo                      String?                        @db.Text
+  date_of_birth              DateTime?                      @db.Date
+  address                    String?                        @db.Text
+  smoking                    Boolean?
+  alcoholism                 Boolean?
+  tobacco                    Boolean?
+  others                     String?                        @db.VarChar(255)
+  pregnancy                  Boolean?
+  exercise                   Boolean?
+  allergy                    String?                        @db.VarChar(255)
+  data_logs                  String?                        @db.Text
+  patient_emergency_contacts patient_emergency_contacts[]
+  patient_medical_records    patient_medical_records[]
+
+  @@index([email])
+}
+
+model patient_emergency_contacts {
+  emg_id     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patient_id String   @db.Uuid
+  full_name  String?  @db.VarChar(50)
+  phone_no   String?  @db.VarChar(15)
+  relation   String?  @db.VarChar(50)
+  patient    patients @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade)
+
+  @@index([patient_id])
+}
+
+
+// =========================
+// DOCTORS & HOSPITALS
+// =========================
+
+model doctors {
+  doctor_id              String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  full_name              String?                   @db.VarChar(100)
+  photo                  String?                   @db.Text
+  date_of_birth          DateTime?                 @db.Date
+  address                String?                   @db.Text
+  gender                 String?                   @db.VarChar(10)
+  email                  String?                   @unique @db.VarChar(255)
+  password               String?                   @db.Text
+  specializations        String?                   @db.Text
+  license_number         String?                   @db.VarChar(50)
+  years_of_experience    Int?
+  status                 String?                   @db.VarChar(20)
+  hospital_affiliation   String?                   @db.VarChar(255)
+  verification_documents String?                   @db.Text
+  doctor_hospitals       doctor_hospitals[]
+  medical_records        patient_medical_records[]
+
+  @@index([email])
+  @@index([license_number])
+}
+
+model hospitals {
+  hospital_id              String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                     String?                   @db.VarChar(255)
+  photo                    String?                   @db.Text
+  address                  String?                   @db.Text
+  phone_no                 String?                   @db.VarChar(20)
+  email                    String?                   @unique @db.VarChar(255)
+  license_no               String                    @unique @db.VarChar(100)
+  website                  String?                   @db.VarChar(255)
+  license_valid_till       DateTime?                 @db.Date
+  type                     String?                   @db.VarChar(100)
+  password                 String?                   @db.Text
+  founded_on               DateTime?                 @db.Date
+  verification_documents   String?                   @db.Text
+  doctor_hospitals         doctor_hospitals[]
+  medical_records          patient_medical_records[]
+
+  @@index([name])
+  @@index([email])
+}
+
+model doctor_hospitals {
+  doctor_id   String    @db.Uuid
+  hospital_id String    @db.Uuid
+  doctor      doctors   @relation(fields: [doctor_id], references: [doctor_id], onDelete: Cascade)
+  hospital    hospitals @relation(fields: [hospital_id], references: [hospital_id], onDelete: Cascade)
+
+  @@id([doctor_id, hospital_id])
+}
+
+
+// =========================
+// PATIENT MEDICAL RECORDS
+// =========================
+
+model patient_medical_records {
+  record_id                       String                             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patient_id                      String                             @db.Uuid
+  doctor_id                       String?                            @db.Uuid
+  hospital_id                     String?                            @db.Uuid
+  created_at                      DateTime?                          @db.Timestamp()
+  updated_at                      DateTime?                          @db.Timestamp()
+  entry_type                      String?                            @db.VarChar(25)
+  diagnosis_name                  String?                            @db.VarChar(255)
+  visibility                      Boolean?
+  history_of_present_illness      String?                            @db.Text
+  treatment_undergone             String?                            @db.Text
+  doctor_name                     String?                            @db.VarChar(100)
+  hospital_name                   String?                            @db.VarChar(255)
+  appointment_date                DateTime?                          @db.Date
+  reg_no                          String?                            @db.VarChar(50)
+  alternative_system_of_medicine  String?                            @db.VarChar(50)
+  patient                         patients                           @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade)
+  doctor                          doctors?                           @relation(fields: [doctor_id], references: [doctor_id], onDelete: SetNull)
+  hospital                        hospitals?                         @relation(fields: [hospital_id], references: [hospital_id], onDelete: SetNull)
+  patient_hospitalization_details patient_hospitalization_details[]
+  patient_surgery_details         patient_surgery_details[]
+  patient_documents               patient_documents[]
+
+  @@index([patient_id])
+  @@index([doctor_id])
+  @@index([hospital_id])
+  @@index([created_at])
+  @@index([visibility])
+  @@index([entry_type])
+}
+
+model patient_hospitalization_details {
+  id                  String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  record_id           String                    @db.Uuid
+  duration            String?                   @db.VarChar(50)
+  reason              String?                   @db.Text
+  room_no             String?                   @db.VarChar(50)
+  treatment_undergone String?                   @db.Text
+  medical_record      patient_medical_records   @relation(fields: [record_id], references: [record_id], onDelete: Cascade)
+
+  @@index([record_id])
+}
+
+model patient_surgery_details {
+  id                String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  record_id         String                    @db.Uuid
+  type              String?                   @db.VarChar(100)
+  duration          String?                   @db.VarChar(50)
+  outcome           String?                   @db.Text
+  medical_condition String?                   @db.Text
+  bed_no            String?                   @db.VarChar(50)
+  medical_record    patient_medical_records   @relation(fields: [record_id], references: [record_id], onDelete: Cascade)
+
+  @@index([record_id])
+}
+
+model patient_documents {
+  doc_id         String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  record_id      String                    @db.Uuid
+  prescriptions  String?                   @db.Text
+  lab_results    String?                   @db.Text
+  created_at     DateTime?                 @db.Timestamp()
+  updated_at     DateTime?                 @db.Timestamp()
+  medical_record patient_medical_records   @relation(fields: [record_id], references: [record_id], onDelete: Cascade)
+
+  @@index([record_id])
+}
+
+
+// =========================
+// EXTERNAL VIEWERS
+// =========================
+
+model external_viewers {
+  viewer_id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  full_name              String?   @db.VarChar(100)
+  photo                  String?   @db.Text
+  gender                 String?   @db.VarChar(10)
+  date_of_birth          DateTime? @db.Date
+  org_type               String?   @db.VarChar(50)
+  org_name               String?   @db.VarChar(50)
+  org_address            String?   @db.Text
+  org_description        String?   @db.Text
+  org_founded_on         DateTime? @db.Date
+  website                String?   @db.VarChar(255)
+  phone_no               String?   @db.VarChar(15)
+  email                  String?   @unique @db.VarChar(255)
+  password               String?   @db.Text
+  verification_documents String?   @db.Text
+  license_no             String    @unique @db.VarChar(100)
+  license_valid_till     DateTime? @db.Date
+}
+
+
+// =========================
+// HEALTH TIPS
+// =========================
+
+model health_tips {
+  id         Int       @id @default(autoincrement())
+  category   String    @db.VarChar(50)
+  tip_text   String    @db.Text
+  created_at DateTime? @default(now()) @db.Timestamptz()
+}

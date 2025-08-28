@@ -4,3 +4,4 @@
 .env.local
 # ## Dependencies ##
 node_modules/
+/src/generated/prisma
