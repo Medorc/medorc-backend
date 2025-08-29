@@ -24,4 +24,8 @@ cloudinaryRoute.post(
     cloudinaryController.uploadDocument
 );
 
+cloudinaryRoute.delete(
+    '/asset',
+    cloudinaryController.deleteAsset);
+
 export default cloudinaryRoute;
