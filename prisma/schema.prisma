@@ -128,7 +128,7 @@ model patient_medical_records {
   updated_at                      DateTime?                          @db.Timestamp()
   entry_type                      String?                            @db.VarChar(25)
   diagnosis_name                  String?                            @db.VarChar(255)
-  visibility                      Boolean?
+  visibility                      Boolean?                           @default(true)
   history_of_present_illness      String?                            @db.Text
   treatment_undergone             String?                            @db.Text
   doctor_name                     String?                            @db.VarChar(100)
