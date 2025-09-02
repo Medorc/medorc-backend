@@ -29,7 +29,7 @@ export const login = async (email:string, password: string, role: Role)=>{
     const token = jwt.sign(
         {
             id: user.patient_id,
-            role: "doctor", // default : role
+            role: role, // default : role
         },
         process.env.JWT_SECRET!, // The '!' tells TypeScript we know this value exists
         { expiresIn: '24h' }
