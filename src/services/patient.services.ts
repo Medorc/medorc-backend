@@ -1,8 +1,10 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import type { JwtPayload } from 'jsonwebtoken';
 import {PrismaClient} from "@prisma/client";
 import {Prisma} from "@prisma/client";
-import type {PatientDetails, Lifestyle, EmergencyContact} from "../types/application.js";
+import type {PatientDetails, Lifestyle, EmergencyContact, Record} from "../types/application.js";
+
 
 const prisma = new PrismaClient();
 
@@ -404,4 +406,118 @@ export const deletePatientEmergencyContact = async(patient_id: string, emg_id: s
             }
             return deletedContact;
 }
+
+export const addPatientDataLog = async (
+    patientIdentifier: { patient_id?: string; shc_code?: string; qr_code?: string; },
+    newLogEntry: string) => {
+    // Step 1: Find the patient and retrieve their existing logs
+    let whereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patientIdentifier.patient_id, patientIdentifier.shc_code, patientIdentifier.qr_code);
+    const patient = await prisma.patients.findUnique({
+        where: whereClause,
+        select: { data_logs: true },
+    });
+
+    if (!patient) {
+        throw new Error("Patient not found for logging.");
+    }
+
+    // Step 2: Prepare the list of logs
+    // Split existing logs by newline, filter out any empty lines
+    const existingLogs = patient.data_logs ? patient.data_logs.split(',').filter(log => log) : [];
+
+    // Add the new log to the beginning of the array
+    existingLogs.unshift(newLogEntry);
+
+    // Step 3: Keep only the last 50 logs
+    const updatedLogs = existingLogs.slice(0, 50);
+
+    // Step 4: Join the array back into a single string and update the database
+    await prisma.patients.update({
+        where: whereClause,
+        data: {
+            data_logs: updatedLogs.join(','),
+        },
+    });
+};
+
+export const createPatientRecord = async(
+    patientIdentifier: { patient_id?: string; shc_code?: string; qr_code?: string; },
+    record:Record,
+    creatorPayload: JwtPayload | string)=>{
+      if(!record || !record.basicDetails){
+          throw new Error("Basic record must be provided.");
+      }
+    let whereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patientIdentifier.patient_id, patientIdentifier.shc_code, patientIdentifier.qr_code);
+    const patient = await prisma.patients.findUnique({
+        where: whereClause,
+        select: { patient_id: true }
+    });
+    if (!patient) {
+        throw new Error("Patient not found.");
+    }
+    const recordCreateData: Prisma.patient_medical_recordsCreateInput = {
+        patient: { connect: { patient_id: patient.patient_id } },
+        created_at: new Date(), // Set the creation timestamp
+        entry_type: "Self",
+        ...record.basicDetails
+    };
+
+    if (typeof creatorPayload === 'object' && creatorPayload.role === 'doctor' && creatorPayload.id) {
+        recordCreateData.doctor = {
+            connect: { doctor_id: creatorPayload.id as string },
+        };
+        recordCreateData.entry_type = "Doctor";
+    } else if (typeof creatorPayload === 'object' && creatorPayload.role === 'hospital' && creatorPayload.id) {
+        recordCreateData.hospital = {
+            connect: { hospital_id: creatorPayload.id as string }
+        };
+        recordCreateData.entry_type = "Hospital";
+    }
+
+    return prisma.$transaction(async (tx) => {
+        // Create the main medical record using the dynamically built data
+        const newRecord = await tx.patient_medical_records.create({
+            data: recordCreateData
+        });
+
+        // Conditionally create hospitalization details
+        if (record.hospitalizationDetails) {
+            await tx.patient_hospitalization_details.create({
+                data: {
+                    record_id: newRecord.record_id,
+                    ...record.hospitalizationDetails
+                }
+            });
+        }
+
+        // Conditionally create surgery details
+        if (record.surgeryDetails) {
+            await tx.patient_surgery_details.create({
+                data: {
+                    record_id: newRecord.record_id,
+                    ...record.surgeryDetails
+                }
+            });
+        }
+
+        // Conditionally create documents
+        if (record.documents && (record.documents.prescription || record.documents.lab_results)) {
+            const documentData: Prisma.patient_documentsCreateInput = {
+                medical_record: {
+                    connect: { record_id: newRecord.record_id }
+                }
+            };
+            if (record.documents.prescription) {
+                documentData.prescriptions = record.documents.prescription;
+            }
+            if (record.documents.lab_results) {
+                documentData.lab_results = record.documents.lab_results;
+            }
+            await tx.patient_documents.create({ data: documentData });
+        }
+
+        return { record_id: newRecord.record_id };
+    });
+}
+
 

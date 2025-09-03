@@ -1,6 +1,6 @@
 import * as patientService from "../../services/patient.services.js";
 import {type Request, type Response} from "express";
-import type {EmergencyContact} from "../../types/application.js";
+import type {EmergencyContact, Lifestyle} from "../../types/application.js";
 
 export const handleGetPatientProfile = async(req: Request, res: Response) => {
     try {
@@ -271,15 +271,7 @@ export const handleUpdatePatientPhoto = async(req: Request, res: Response) => {
         res.status(400).json({ error: "Unable to update patient photo." });
     }
 }
-interface lifestyle{
-    smoking: boolean,
-    alcoholism: boolean,
-    tobacco: boolean,
-    exercise: boolean,
-    pregnancy: boolean,
-    others: string,
-    allergy: string,
-}
+
 export const handleUpdatePatientLifestyle = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
@@ -288,7 +280,7 @@ export const handleUpdatePatientLifestyle = async(req: Request, res: Response) =
         }
 
         let updatedPatientLifestyle;
-        let newLifestyle: lifestyle = req.body.newLifestyle;
+        let newLifestyle: Lifestyle = req.body.newLifestyle;
         if(newLifestyle==null){
             res.status(400).json({ error: "Lifestyle doesn't provided correctly or doesn't exists." });
         }
@@ -472,3 +464,79 @@ export const handleDeletePatientEmergencyContact = async(req: Request, res: Resp
         res.status(400).json({ error: err instanceof Error ? err.message : "Unable to delete patient Emergency Contact" });
     }
 }
+
+export const handleCreatePatientRecord = async (req: Request, res: Response) => {
+    try {
+        const userPayload = req.user;
+        const {
+            basicDetails,
+            hospitalizationDetails,
+            surgeryDetails,
+            documents,
+            shc_code, // Doctor/Hospital will provide this in the body
+            qr_code   // Or this
+        } = req.body;
+
+        if (!basicDetails) {
+            return res.status(400).json({ error: 'basicDetails are required.' });
+        }
+
+        if (typeof userPayload !== 'object' || !userPayload) {
+            return res.status(403).json({ error: 'Invalid token payload.' });
+        }
+
+        let patientIdentifier: { patient_id?: string; shc_code?: string; qr_code?: string; } = {};
+
+        if (userPayload.role === 'patient') {
+            if (!('id' in userPayload)) {
+                return res.status(400).json({ error: 'Patient ID missing in token.' });
+            }
+            patientIdentifier = { patient_id: String(userPayload.id) };
+        } else if (['doctor', 'hospital'].includes(userPayload.role as string)) {
+            if (!shc_code && !qr_code) {
+                return res.status(400).json({
+                    error: "An 'shc_code' or 'qr_code' must be provided in the request body for this role.",
+                });
+            }
+            patientIdentifier = { shc_code, qr_code };
+        } else {
+            return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
+        }
+
+        // Call the service with the correct patient identifier, record data, AND the creator's payload
+        const newRecord = await patientService.createPatientRecord(
+            patientIdentifier,
+            {
+                basicDetails,
+                hospitalizationDetails,
+                surgeryDetails,
+                documents
+            },
+            userPayload // This is the required addition
+        );
+         //--LOGGING CALL
+         try{
+
+             const creatorId = (userPayload as any).id;
+             const creatorRole = (userPayload as any).role;
+
+             const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] created a new record [${newRecord.record_id}]]`;
+
+             // Call the logging service (fire-and-forget)
+             await patientService.addPatientDataLog(patientIdentifier, logMessage);
+         }
+         catch(logError){
+             console.error("Failed to add data log:", logError);
+         }
+        return res.status(201).json({
+            message: 'Record created successfully.',
+            data: { record_id: newRecord.record_id }
+        });
+
+    } catch (error) {
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while creating the record.' });
+    }
+};

@@ -18,6 +18,6 @@ patientRoute.patch("/profile/password",authenticateToken,patientController.handl
 patientRoute.post("/profile/emergency-contact",authenticateToken,patientController.handleAddPatientEmergencyContact);
 patientRoute.delete("/profile/emergency-contact",authenticateToken,patientController.handleDeletePatientEmergencyContact);
 
-
+patientRoute.post("/records",authenticateToken, patientController.handleCreatePatientRecord);
 
 export default patientRoute;
