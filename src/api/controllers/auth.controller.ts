@@ -2,7 +2,7 @@ import * as authService from "../../services/auth.services.js";
 import {type Request, type Response} from "express";
 import {createPatient} from "../../services/patient.services.js";
 
-export const signinUser = async (req: Request, res: Response) => {
+export const handleLogin = async (req: Request, res: Response) => {
     try{
         const {email, password, role} = req.body;
         if (!email || !password || !role) {
@@ -36,7 +36,7 @@ export const signinUser = async (req: Request, res: Response) => {
 }
 
 
-export const signupUser = async(req: Request,res: Response)=>{
+export const handleSignup = async(req: Request,res: Response)=>{
     try {
         const {role, ...userDetails} = req.body;
         if (!role) {

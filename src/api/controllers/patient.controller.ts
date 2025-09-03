@@ -1,7 +1,8 @@
 import * as patientService from "../../services/patient.services.js";
 import {type Request, type Response} from "express";
+import type {EmergencyContact} from "../../types/application.js";
 
-export const getProfile = async(req: Request, res: Response) => {
+export const handleGetPatientProfile = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -16,7 +17,7 @@ export const getProfile = async(req: Request, res: Response) => {
                 return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
-            patientProfile = await patientService.fetchProfile(userId);
+            patientProfile = await patientService.getPatientProfile(userId);
         } else if (userPayload.role === "doctor" || userPayload.role === "hospital" || userPayload.role === "extern") {
             // Others: must provide shc_code or qr_code in query
             const { shc_code, qr_code } = req.query;
@@ -27,7 +28,7 @@ export const getProfile = async(req: Request, res: Response) => {
                 });
             }
 
-            patientProfile = await patientService.fetchProfile(
+            patientProfile = await patientService.getPatientProfile(
                 undefined,
                 shc_code as string | undefined,
                 qr_code as string | undefined
@@ -43,7 +44,7 @@ export const getProfile = async(req: Request, res: Response) => {
     }
 }
 
-export const getPersonalDetails = async(req: Request, res: Response) => {
+export const handleGetPatientPersonalDetails = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -58,7 +59,7 @@ export const getPersonalDetails = async(req: Request, res: Response) => {
                 return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
-            patientPersonalDetails = await patientService.fetchPersonalDetails(userId);
+            patientPersonalDetails = await patientService.getPatientPersonalDetails(userId);
         } else if (userPayload.role === "doctor" || userPayload.role === "hospital" || userPayload.role === "extern") {
             // Others: must provide shc_code or qr_code in query
             const { shc_code, qr_code } = req.query;
@@ -69,7 +70,7 @@ export const getPersonalDetails = async(req: Request, res: Response) => {
                 });
             }
 
-            patientPersonalDetails = await patientService.fetchPersonalDetails(
+            patientPersonalDetails = await patientService.getPatientPersonalDetails(
                 undefined,
                 shc_code as string | undefined,
                 qr_code as string | undefined
@@ -85,7 +86,7 @@ export const getPersonalDetails = async(req: Request, res: Response) => {
     }
 }
 
-export const getBasicDetails = async(req: Request, res: Response) => {
+export const handleGetPatientBasicDetails = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -100,7 +101,7 @@ export const getBasicDetails = async(req: Request, res: Response) => {
                 return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
-            patientBasicDetails = await patientService.fetchBasicDetails(userId);
+            patientBasicDetails = await patientService.getPatientBasicDetails(userId);
         } else if (userPayload.role === "doctor" || userPayload.role === "hospital" || userPayload.role === "extern") {
             // Others: must provide shc_code or qr_code in query
             const { shc_code, qr_code } = req.query;
@@ -111,7 +112,7 @@ export const getBasicDetails = async(req: Request, res: Response) => {
                 });
             }
 
-            patientBasicDetails = await patientService.fetchBasicDetails(
+            patientBasicDetails = await patientService.getPatientBasicDetails(
                 undefined,
                 shc_code as string | undefined,
                 qr_code as string | undefined
@@ -127,7 +128,7 @@ export const getBasicDetails = async(req: Request, res: Response) => {
     }
 }
 
-export const getEmergencyContacts = async(req: Request, res: Response) => {
+export const handleGetPatientEmergencyContacts = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -142,7 +143,7 @@ export const getEmergencyContacts = async(req: Request, res: Response) => {
                 return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
-            patientEmergencyContacts = await patientService.fetchEmergencyContacts(userId);
+            patientEmergencyContacts = await patientService.getPatientEmergencyContacts(userId);
         } else if (userPayload.role === "doctor" || userPayload.role === "hospital" || userPayload.role === "extern") {
             // Others: must provide shc_code or qr_code in query
             const { shc_code, qr_code } = req.query;
@@ -153,7 +154,7 @@ export const getEmergencyContacts = async(req: Request, res: Response) => {
                 });
             }
 
-            patientEmergencyContacts = await patientService.fetchEmergencyContacts(
+            patientEmergencyContacts = await patientService.getPatientEmergencyContacts(
                 undefined,
                 shc_code as string | undefined,
                 qr_code as string | undefined
@@ -169,7 +170,7 @@ export const getEmergencyContacts = async(req: Request, res: Response) => {
     }
 }
 
-export const getDataLogs = async(req: Request, res: Response) => {
+export const handleGetPatientDataLogs = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -184,7 +185,7 @@ export const getDataLogs = async(req: Request, res: Response) => {
                 return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
-            patientDataLogs = await patientService.fetchDataLogs(userId);
+            patientDataLogs = await patientService.getPatientDataLogs(userId);
         } else if (userPayload.role === "doctor" || userPayload.role === "hospital" || userPayload.role === "extern") {
             // Others: must provide shc_code or qr_code in query
             const { shc_code, qr_code } = req.query;
@@ -195,7 +196,7 @@ export const getDataLogs = async(req: Request, res: Response) => {
                 });
             }
 
-            patientDataLogs = await patientService.fetchDataLogs(
+            patientDataLogs = await patientService.getPatientDataLogs(
                 undefined,
                 shc_code as string | undefined,
                 qr_code as string | undefined
@@ -211,7 +212,7 @@ export const getDataLogs = async(req: Request, res: Response) => {
     }
 }
 
-export const togglepatientVisibility = async(req: Request, res: Response) => {
+export const handleUpdatePatientVisibility = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -229,7 +230,7 @@ export const togglepatientVisibility = async(req: Request, res: Response) => {
                 return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
-            updatedPatientVisibility = await patientService.toggleVisibility(curVisibility,userId);
+            updatedPatientVisibility = await patientService.updatePatientVisibility(curVisibility,userId);
         } else {
             return res.status(403).json({ error: "Unauthorized role." });
         }
@@ -241,7 +242,7 @@ export const togglepatientVisibility = async(req: Request, res: Response) => {
     }
 }
 
-export const updatePatientPhoto = async(req: Request, res: Response) => {
+export const handleUpdatePatientPhoto = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -259,7 +260,7 @@ export const updatePatientPhoto = async(req: Request, res: Response) => {
                 return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
-            updatedPatientPhoto = await patientService.updatePhoto(newPhoto,userId);
+            updatedPatientPhoto = await patientService.updatePatientPhoto(newPhoto,userId);
         } else {
             return res.status(403).json({ error: "Unauthorized role." });
         }
@@ -279,7 +280,7 @@ interface lifestyle{
     others: string,
     allergy: string,
 }
-export const updatePatientLifestyle = async(req: Request, res: Response) => {
+export const handleUpdatePatientLifestyle = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -297,7 +298,7 @@ export const updatePatientLifestyle = async(req: Request, res: Response) => {
                 return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
-            updatedPatientLifestyle = await patientService.updateLifestyle(newLifestyle,userId);
+            updatedPatientLifestyle = await patientService.updatePatientLifestyle(newLifestyle,userId);
         } else {
             return res.status(403).json({ error: "Unauthorized role." });
         }
@@ -309,7 +310,7 @@ export const updatePatientLifestyle = async(req: Request, res: Response) => {
 
 }
 
-export const updatePatientEmail = async(req: Request, res: Response) => {
+export const handleUpdatePatientEmail = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -327,7 +328,7 @@ export const updatePatientEmail = async(req: Request, res: Response) => {
                 return res.status(400).json({error: "User ID missing in token."});
             }
             const userId = String(userPayload.id);
-            updatedPatientEmail = await patientService.updateEmail(newEmail, userId);
+            updatedPatientEmail = await patientService.updatePatientEmail(newEmail, userId);
 
         } else {
             return res.status(403).json({error: "Unauthorized role."});
@@ -339,7 +340,7 @@ export const updatePatientEmail = async(req: Request, res: Response) => {
         }
 }
 
-export const updatePatientPhoneNo = async(req: Request, res: Response) => {
+export const handleUpdatePatientPhoneNo = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -357,7 +358,7 @@ export const updatePatientPhoneNo = async(req: Request, res: Response) => {
                 return res.status(400).json({error: "User ID missing in token."});
             }
             const userId = String(userPayload.id);
-            updatedPatientPhoneNo = await patientService.updatePhoneNo(newPhoneNo, userId);
+            updatedPatientPhoneNo = await patientService.updatePatientPhoneNo(newPhoneNo, userId);
 
         } else {
             return res.status(403).json({error: "Unauthorized role."});
@@ -369,7 +370,7 @@ export const updatePatientPhoneNo = async(req: Request, res: Response) => {
     }
 }
 
-export const updatePatientPassword = async(req: Request, res: Response) => {
+export const handleUpdatePatientPassword = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -386,7 +387,7 @@ export const updatePatientPassword = async(req: Request, res: Response) => {
                 return res.status(400).json({error: "User ID missing in token."});
             }
             const userId = String(userPayload.id);
-            await patientService.updatePassword(newPassword, userId);
+            await patientService.updatePatientPassword(newPassword, userId);
 
         } else {
             return res.status(403).json({error: "Unauthorized role."});
@@ -398,21 +399,16 @@ export const updatePatientPassword = async(req: Request, res: Response) => {
     }
 }
 
-interface emergencyContact{
-    full_name:string,
-    phone_no:string,
-    relation:string
-}
 
 
-export const addPatientEmergencyContact = async(req: Request, res: Response) => {
+export const handleAddPatientEmergencyContact = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
             return res.status(400).json({error: "Invalid token payload."});
         }
 
-        let emergencyContact:emergencyContact = req.body.newEmergencyContact;
+        let emergencyContact:EmergencyContact = req.body.newEmergencyContact;
         let newEmergencyContact;
         if (!emergencyContact) {
             console.log(emergencyContact);
@@ -424,7 +420,7 @@ export const addPatientEmergencyContact = async(req: Request, res: Response) => 
                 return res.status(400).json({error: "User ID missing in token."});
             }
             const userId = String(userPayload.id);
-            newEmergencyContact = await patientService.addEmergencyContact(emergencyContact, userId);
+            newEmergencyContact = await patientService.addPatientEmergencyContact(emergencyContact, userId);
 
         } else {
             return res.status(403).json({error: "Unauthorized role."});
@@ -447,7 +443,7 @@ export const addPatientEmergencyContact = async(req: Request, res: Response) => 
     }
 }
 
-export const deletePatientEmergencyContact = async(req: Request, res: Response) => {
+export const handleDeletePatientEmergencyContact = async(req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -464,7 +460,7 @@ export const deletePatientEmergencyContact = async(req: Request, res: Response) 
         }
 
         const userId = String(userPayload.id);
-        const result = await patientService.deleteEmergencyContact(userId,emg_id);
+        const result = await patientService.deletePatientEmergencyContact(userId,emg_id);
 
         if (!result) {
             return res.status(404).json({error: "Emergency contact not found"});

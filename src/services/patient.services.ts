@@ -2,27 +2,26 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import {PrismaClient} from "@prisma/client";
 import {Prisma} from "@prisma/client";
+import type {PatientDetails, Lifestyle, EmergencyContact} from "../types/application.js";
 
 const prisma = new PrismaClient();
-interface patientDetails {
-    date_of_birth: Date,
-    full_name: string,
-    phone_no: string,
-    photo: string,
-    gender: string,
-    email: string,
-    password: string,
-    address: string,
-    allergy: string,
-    smoking: boolean,
-    alcoholism: boolean,
-    tobacco: boolean,
-    pregnancy: boolean,
-    exercise: boolean,
-}
 
-export const createPatient = async (patient:patientDetails)=>{
-        try{
+const getPatientWhereClause = (patient_id?: string, shc_code?: string, qr_code?: string): Prisma.patientsWhereUniqueInput => {
+    if (patient_id) {
+        return { patient_id: patient_id };
+    }
+    if (shc_code) {
+        return { shc_code: shc_code };
+    }
+    if (qr_code) {
+        return { qr_code: qr_code };
+    }
+
+    // If no identifier is provided, throw an error
+    throw new Error("An identifier (patient_id, shc_code, or qr_code) must be provided.");
+};
+
+export const createPatient = async (patient:PatientDetails)=>{
             if(!patient || !patient.password){
                 throw new Error("patient details were not received properly");
             }
@@ -46,28 +45,10 @@ export const createPatient = async (patient:patientDetails)=>{
             );
             const { password: _, ...userWithoutPassword } = newUser;
             return { token, user: userWithoutPassword };
-        }
-        catch (error){
-            console.log(error);
-            throw new Error("Failed to create user.");
-        }
 }
 
-export const fetchProfile = async(patient_id?: string, shc_code?:string, qr_code?:string)=>{
-     try{
-         let whereClause: Prisma.patientsWhereUniqueInput ;
-
-         // 2. Conditionally build the where clause based on provided arguments
-         if (patient_id) {
-             whereClause = { patient_id: patient_id };
-         } else if (shc_code) {
-             whereClause = { shc_code: shc_code };
-         } else if (qr_code) {
-             whereClause = { qr_code: qr_code };
-         } else {
-             // 3. If no identifier is provided, throw an error
-             throw new Error("An identifier (patient_id, shc_code, or qr_code) must be provided.");
-         }
+export const getPatientProfile = async(patient_id?: string, shc_code?:string, qr_code?:string)=>{
+         let whereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patient_id, shc_code, qr_code);
 
          const patientProfile = await prisma.patients.findUnique({
              where: whereClause,
@@ -88,27 +69,10 @@ export const fetchProfile = async(patient_id?: string, shc_code?:string, qr_code
              throw new Error("User not found");
          }
          return patientProfile;
-     }catch (error){
-         console.log(error);
-         throw new Error("Failed to get profile");
-     }
 }
 
-export const fetchPersonalDetails = async(patient_id?: string, shc_code?:string, qr_code?:string) =>{
-    try{
-        let whereClause: Prisma.patientsWhereUniqueInput ;
-
-        // 2. Conditionally build the where clause based on provided arguments
-        if (patient_id) {
-            whereClause = { patient_id: patient_id };
-        } else if (shc_code) {
-            whereClause = { shc_code: shc_code };
-        } else if (qr_code) {
-            whereClause = { qr_code: qr_code };
-        } else {
-            // 3. If no identifier is provided, throw an error
-            throw new Error("An identifier (patient_id, shc_code, or qr_code) must be provided.");
-        }
+export const getPatientPersonalDetails = async(patient_id?: string, shc_code?:string, qr_code?:string) =>{
+    let whereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patient_id, shc_code, qr_code);
 
         const patientPersonalDetails = await prisma.patients.findUnique({
             where: whereClause,
@@ -133,27 +97,10 @@ export const fetchPersonalDetails = async(patient_id?: string, shc_code?:string,
             throw new Error("User not found");
         }
         return patientPersonalDetails;
-    }catch (error){
-        console.log(error);
-        throw new Error("Failed to get profile");
-    }
 }
 
-export const fetchBasicDetails = async(patient_id?: string, shc_code?:string, qr_code?:string) => {
-    try{
-        let whereClause: Prisma.patientsWhereUniqueInput ;
-
-        // 2. Conditionally build the where clause based on provided arguments
-        if (patient_id) {
-            whereClause = { patient_id: patient_id };
-        } else if (shc_code) {
-            whereClause = { shc_code: shc_code };
-        } else if (qr_code) {
-            whereClause = { qr_code: qr_code };
-        } else {
-            // 3. If no identifier is provided, throw an error
-            throw new Error("An identifier (patient_id, shc_code, or qr_code) must be provided.");
-        }
+export const getPatientBasicDetails = async(patient_id?: string, shc_code?:string, qr_code?:string) => {
+       let whereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patient_id, shc_code, qr_code);
 
         const patientBasicDetails = await prisma.patients.findUnique({
             where: whereClause,
@@ -169,27 +116,12 @@ export const fetchBasicDetails = async(patient_id?: string, shc_code?:string, qr
             throw new Error("User not found");
         }
         return patientBasicDetails;
-    }catch (error){
-        console.log(error);
-        throw new Error("Failed to get profile");
-    }
+
 }
 
-export const fetchEmergencyContacts = async(patient_id?: string, shc_code?:string, qr_code?:string) => {
-    try{
-        let whereClause: Prisma.patientsWhereUniqueInput ;
+export const getPatientEmergencyContacts = async(patient_id?: string, shc_code?:string, qr_code?:string) => {
 
-        // 2. Conditionally build the where clause based on provided arguments
-        if (patient_id) {
-            whereClause = { patient_id: patient_id };
-        } else if (shc_code) {
-            whereClause = { shc_code: shc_code };
-        } else if (qr_code) {
-            whereClause = { qr_code: qr_code };
-        } else {
-            // 3. If no identifier is provided, throw an error
-            throw new Error("An identifier (patient_id, shc_code, or qr_code) must be provided.");
-        }
+    let whereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patient_id, shc_code, qr_code);
 
         const patientEmergencyContacts = await prisma.patients.findUnique({
             where: whereClause,
@@ -203,27 +135,12 @@ export const fetchEmergencyContacts = async(patient_id?: string, shc_code?:strin
             throw new Error("User not found");
         }
         return patientEmergencyContacts;
-    }catch (error){
-        console.log(error);
-        throw new Error("Failed to get profile");
-    }
+
 }
 
-export const fetchDataLogs = async(patient_id?: string, shc_code?:string, qr_code?:string) => {
-    try{
-        let whereClause: Prisma.patientsWhereUniqueInput ;
+export const getPatientDataLogs = async(patient_id?: string, shc_code?:string, qr_code?:string) => {
 
-        // 2. Conditionally build the where clause based on provided arguments
-        if (patient_id) {
-            whereClause = { patient_id: patient_id };
-        } else if (shc_code) {
-            whereClause = { shc_code: shc_code };
-        } else if (qr_code) {
-            whereClause = { qr_code: qr_code };
-        } else {
-            // 3. If no identifier is provided, throw an error
-            throw new Error("An identifier (patient_id, shc_code, or qr_code) must be provided.");
-        }
+    let whereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patient_id, shc_code, qr_code);
 
         const patientDataLogs = await prisma.patients.findUnique({
             where: whereClause,
@@ -238,14 +155,11 @@ export const fetchDataLogs = async(patient_id?: string, shc_code?:string, qr_cod
             throw new Error("User not found");
         }
         return patientDataLogs;
-    }catch (error){
-        console.log(error);
-        throw new Error("Failed to get profile");
-    }
+
 }
 
-export const toggleVisibility = async(curVisibility: boolean, patient_id: string)=> {
-    try{
+export const updatePatientVisibility = async(curVisibility: boolean, patient_id: string)=> {
+
         let whereClause: Prisma.patientsWhereUniqueInput ;
 
         // 2. Conditionally build the where clause based on provided arguments
@@ -272,15 +186,11 @@ export const toggleVisibility = async(curVisibility: boolean, patient_id: string
             throw new Error("User not found");
         }
         return updatedVisibility;
-    }
-    catch(err){
-        console.log("Unable to update visibility");
-        throw new Error("Failed to update visibility");
-    }
+
 }
 
-export const updatePhoto =  async(newPhoto:string, patient_id: string)=> {
-    try{
+export const updatePatientPhoto =  async(newPhoto:string, patient_id: string)=> {
+
         let whereClause: Prisma.patientsWhereUniqueInput ;
 
         // 2. Conditionally build the where clause based on provided arguments
@@ -307,25 +217,12 @@ export const updatePhoto =  async(newPhoto:string, patient_id: string)=> {
             throw new Error("User not found");
         }
         return updatedPhoto;
-    }
-    catch(err){
-        console.log("Unable to update Photo");
-        throw new Error("Failed to update Photo");
-    }
+
 }
 
-interface lifestyle{
-    smoking: boolean,
-    alcoholism: boolean,
-    tobacco: boolean,
-    exercise: boolean,
-    pregnancy: boolean,
-    others: string,
-    allergy: string,
-}
 
-export const updateLifestyle = async(newLifestyle:lifestyle, patient_id: string)=> {
-    try{
+export const updatePatientLifestyle = async(newLifestyle:Lifestyle, patient_id: string)=> {
+
         let whereClause: Prisma.patientsWhereUniqueInput ;
         // 2. Conditionally build the where clause based on provided arguments
         if (patient_id) {
@@ -365,15 +262,11 @@ export const updateLifestyle = async(newLifestyle:lifestyle, patient_id: string)
         }else{
             throw new Error("Lifestyle must be provided.");
         }
-    }
-    catch(err){
-        console.log("Unable to update Lifestyle");
-        throw new Error("Failed to update Lifestyle");
-    }
+
 }
 
-export const updateEmail = async(newEmail:string, patient_id: string)=> {
-    try{
+export const updatePatientEmail = async(newEmail:string, patient_id: string)=> {
+
         let whereClause: Prisma.patientsWhereUniqueInput ;
         // 2. Conditionally build the where clause based on provided arguments
         if (patient_id) {
@@ -401,15 +294,11 @@ export const updateEmail = async(newEmail:string, patient_id: string)=> {
         else{
             throw new Error("Email id must be provided.");
         }
-    }
-    catch(err){
-        console.log("Unable to update email");
-        throw new Error("Failed to update email");
-    }
+
 }
 
-export const updatePhoneNo = async(newPhoneNo:string, patient_id: string)=> {
-    try{
+export const updatePatientPhoneNo = async(newPhoneNo:string, patient_id: string)=> {
+
         let whereClause: Prisma.patientsWhereUniqueInput ;
         // 2. Conditionally build the where clause based on provided arguments
         if (patient_id) {
@@ -437,28 +326,19 @@ export const updatePhoneNo = async(newPhoneNo:string, patient_id: string)=> {
         else{
             throw new Error("Phone No must be provided.");
         }
-    }
-    catch(err){
-        console.log("Unable to update Phone no");
-        throw new Error("Failed to update Phone no");
-    }
+
 }
 
-export const updatePassword = async(newPassword:string, patient_id: string)=> {
-    try{
-        let whereClause: Prisma.patientsWhereUniqueInput ;
-        // 2. Conditionally build the where clause based on provided arguments
-        if (patient_id) {
-            whereClause = { patient_id: patient_id };
-        } else {
-            // 3. If no identifier is provided, throw an error
+export const updatePatientPassword = async(newPassword:string, patient_id: string)=> {
+
+        if (!patient_id) {
             throw new Error("An identifier (patient_id) must be provided.");
         }
         if(newPassword) {
             const saltRounds =10;
             const password_hash = await bcrypt.hash(newPassword, saltRounds);
             const updatedPassword = await prisma.patients.update({
-                where: whereClause,
+                where: {patient_id},
                 data:{
                     password: password_hash,
                 },
@@ -475,20 +355,15 @@ export const updatePassword = async(newPassword:string, patient_id: string)=> {
         else{
             throw new Error("Password must be provided.");
         }
-    }
-    catch(err){
-        console.log("Unable to update Password");
-    }
-}
-interface emergencyContact{
-    full_name:string,
-    phone_no:string,
-    relation:string
+
 }
 
-export const addEmergencyContact = async(emergencyContact:emergencyContact, patient_id:string)=>{
-    try {
-        const existingContactCount = await prisma.patient_emergency_contacts.count({
+export const addPatientEmergencyContact = async(emergencyContact:EmergencyContact, patient_id:string)=>{
+    if (!patient_id) {
+        throw new Error("An identifier (patient_id) must be provided.");
+    }
+
+    const existingContactCount = await prisma.patient_emergency_contacts.count({
             where: {
                 patient_id: patient_id
             }
@@ -497,7 +372,7 @@ export const addEmergencyContact = async(emergencyContact:emergencyContact, pati
         if (existingContactCount >= 3) {
             throw new Error("Maximum limit of 3 emergency contacts reached.");
         }
-        const newContact = await prisma.patient_emergency_contacts.create({
+        const newEmergencyContact = await prisma.patient_emergency_contacts.create({
             data: {
                 patient_id: patient_id,
                 full_name: emergencyContact.full_name,
@@ -510,15 +385,16 @@ export const addEmergencyContact = async(emergencyContact:emergencyContact, pati
                 relation:true
             }
         });
-        return newContact;
-    }catch(err){
-        console.error("Unable to add EmergencyContact:", err);
-        throw err; // rethrow original error
-    }
+        if(!newEmergencyContact) {
+            throw new Error("Unable to add Emergency contact.");
+        }
+        return newEmergencyContact;
 }
 
-export const deleteEmergencyContact = async(patient_id: string, emg_id: string)=>{
-        try {
+export const deletePatientEmergencyContact = async(patient_id: string, emg_id: string)=>{
+    if (!patient_id || !emg_id) {
+        throw new Error("An identifier (patient_id, emg_id) must be provided.");
+    }
             const deletedContact = await prisma.patient_emergency_contacts.delete({
                 where: { emg_id } // assuming emg_id is unique
             });
@@ -527,8 +403,5 @@ export const deleteEmergencyContact = async(patient_id: string, emg_id: string)=
                 throw new Error("Unauthorized: contact does not belong to this patient");
             }
             return deletedContact;
-        } catch (err) {
-            console.error("Unable to delete EmergencyContact:", err);
-            throw err;
-        }
 }
+
