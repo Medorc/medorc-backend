@@ -83,3 +83,54 @@ export interface Record{
     documents?:Documents,
 }
 
+export interface DoctorDetails{
+    full_name: string,
+    date_of_birth: string,
+    gender: string,
+    email: string,
+    photo: string,
+    password: string,
+    address: string,
+    specializations: string,
+    license_no: string,
+    years_of_experience: number,
+    hospital_affiliation: string,
+    verification_documents: string
+}
+
+export interface HospitalDetails{
+    name: string,
+    photo: string,
+    address:string,
+    phone_no:string,
+    email:string,
+    password:string,
+    license_no: string,
+    website: string,
+    license_valid_till:Date,
+    type:string,
+    founded_on : Date,
+    verification_documents:string
+}
+
+export interface OrganizationDetails{
+    name:string,
+    type: string,
+    address:string,
+    description: string,
+    founded_on: Date,
+    website: string,
+    license_no: string,
+    license_valid_till:Date,
+}
+export interface ExternDetails{
+    full_name: string,
+    date_of_birth: Date,
+    gender: string,
+    photo: string,
+    phone_no: string,
+    email: string,
+    password: string,
+    organization_details: OrganizationDetails,
+    verification_documents: string
+}

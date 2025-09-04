@@ -1,6 +1,9 @@
 import * as authService from "../../services/auth.services.js";
 import {type Request, type Response} from "express";
 import {createPatient} from "../../services/patient.services.js";
+import {createDoctor} from "../../services/doctor.services.js";
+import {createHospital} from "../../services/hospital.services.js";
+import {createExtern} from "../../services/extern.services.js";
 
 export const handleLogin = async (req: Request, res: Response) => {
     try{
@@ -46,6 +49,15 @@ export const handleSignup = async(req: Request,res: Response)=>{
 
         if (role == "patient") {
             result = await createPatient(userDetails);
+        }
+        else if(role=="doctor"){
+            result = await createDoctor(userDetails);
+        }
+        else if(role=="hospital"){
+            result = await createHospital(userDetails);
+        }
+        else if(role=="extern"){
+            result = await createExtern(userDetails);
         }else {
             // Handle other roles or throw an error
             return res.status(400).json({ error: 'Invalid role specified' });

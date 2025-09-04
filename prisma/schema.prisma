@@ -70,9 +70,10 @@ model doctors {
   address                String?                   @db.Text
   gender                 String?                   @db.VarChar(10)
   email                  String?                   @unique @db.VarChar(255)
+  phone_no               String?
   password               String?                   @db.Text
   specializations        String?                   @db.Text
-  license_number         String?                   @db.VarChar(50)
+  license_no             String?                   @db.VarChar(50)
   years_of_experience    Int?
   status                 String?                   @db.VarChar(20)
   hospital_affiliation   String?                   @db.VarChar(255)
@@ -81,7 +82,7 @@ model doctors {
   medical_records        patient_medical_records[]
 
   @@index([email])
-  @@index([license_number])
+  @@index([license_no])
 }
 
 model hospitals {
@@ -204,13 +205,13 @@ model external_viewers {
   org_address            String?   @db.Text
   org_description        String?   @db.Text
   org_founded_on         DateTime? @db.Date
-  website                String?   @db.VarChar(255)
+  org_website                String?   @db.VarChar(255)
+  org_license_no             String    @unique @db.VarChar(100)
+  org_license_valid_till     DateTime? @db.Date
   phone_no               String?   @db.VarChar(15)
   email                  String?   @unique @db.VarChar(255)
   password               String?   @db.Text
   verification_documents String?   @db.Text
-  license_no             String    @unique @db.VarChar(100)
-  license_valid_till     DateTime? @db.Date
 }
 
 

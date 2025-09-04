@@ -783,3 +783,4 @@ export const getPatientDocuments = async(record_id: string)=>{
         }
     });
 }
+
