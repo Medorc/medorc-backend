@@ -3,8 +3,8 @@ import jwt from "jsonwebtoken";
 import type { JwtPayload } from 'jsonwebtoken';
 import {PrismaClient} from "@prisma/client";
 import {Prisma} from "@prisma/client";
-import type {PatientDetails, Lifestyle, EmergencyContact, Record} from "../types/application.js";
-
+import type {PatientDetails, Lifestyle, EmergencyContact, Record,
+PatientIdentifier, HospitalizationRecordDetails, SurgeryRecordDetails} from "../types/application.js";
 
 const prisma = new PrismaClient();
 
@@ -121,9 +121,9 @@ export const getPatientBasicDetails = async(patient_id?: string, shc_code?:strin
 
 }
 
-export const getPatientEmergencyContacts = async(patient_id?: string, shc_code?:string, qr_code?:string) => {
+export const getPatientEmergencyContacts = async(patientIdentifier: PatientIdentifier) => {
 
-    let whereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patient_id, shc_code, qr_code);
+    let whereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patientIdentifier.patient_id, patientIdentifier.shc_code, patientIdentifier.qr_code);
 
         const patientEmergencyContacts = await prisma.patients.findUnique({
             where: whereClause,
@@ -140,9 +140,9 @@ export const getPatientEmergencyContacts = async(patient_id?: string, shc_code?:
 
 }
 
-export const getPatientDataLogs = async(patient_id?: string, shc_code?:string, qr_code?:string) => {
+export const getPatientDataLogs = async(patientIdentifier: PatientIdentifier) => {
 
-    let whereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patient_id, shc_code, qr_code);
+    let whereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patientIdentifier.patient_id, patientIdentifier.shc_code, patientIdentifier.qr_code);
 
         const patientDataLogs = await prisma.patients.findUnique({
             where: whereClause,
@@ -408,9 +408,9 @@ export const deletePatientEmergencyContact = async(patient_id: string, emg_id: s
 }
 
 export const addPatientDataLog = async (
-    patientIdentifier: { patient_id?: string; shc_code?: string; qr_code?: string; },
+    patientIdentifier: PatientIdentifier,
     newLogEntry: string) => {
-    // Step 1: Find the patient and retrieve their existing logs
+    // Find the patient and retrieve their existing logs
     let whereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patientIdentifier.patient_id, patientIdentifier.shc_code, patientIdentifier.qr_code);
     const patient = await prisma.patients.findUnique({
         where: whereClause,
@@ -421,17 +421,12 @@ export const addPatientDataLog = async (
         throw new Error("Patient not found for logging.");
     }
 
-    // Step 2: Prepare the list of logs
-    // Split existing logs by newline, filter out any empty lines
     const existingLogs = patient.data_logs ? patient.data_logs.split(',').filter(log => log) : [];
 
-    // Add the new log to the beginning of the array
     existingLogs.unshift(newLogEntry);
 
-    // Step 3: Keep only the last 50 logs
     const updatedLogs = existingLogs.slice(0, 50);
 
-    // Step 4: Join the array back into a single string and update the database
     await prisma.patients.update({
         where: whereClause,
         data: {
@@ -441,7 +436,7 @@ export const addPatientDataLog = async (
 };
 
 export const createPatientRecord = async(
-    patientIdentifier: { patient_id?: string; shc_code?: string; qr_code?: string; },
+    patientIdentifier: PatientIdentifier,
     record:Record,
     creatorPayload: JwtPayload | string)=>{
       if(!record || !record.basicDetails){
@@ -520,4 +515,147 @@ export const createPatientRecord = async(
     });
 }
 
+export const addPatientHospitalizationDetails = async(record_id: string, hospitalizationDetails: HospitalizationRecordDetails)=>{
+    if(!hospitalizationDetails || !record_id){
+        throw new Error("Hospitalization  details & record_id must be provided.");
+    }
+    return prisma.$transaction(async (tx) => {
+        const existingHospitalization = await tx.patient_hospitalization_details.findFirst({
+            where: { record_id },
+        });
+        if (existingHospitalization) {
+            throw new Error("Hospitalization details for this medical record already exist.");
+        }
+        await tx.patient_medical_records.update({
+            where: {record_id},
+            data: { updated_at: new Date() }
+        });
+        const newHospitalizationDetails =await tx.patient_hospitalization_details.create({
+            data: {
+                record_id: record_id,
+                ...hospitalizationDetails
+            }
+        });
+        return newHospitalizationDetails;
+    })
+}
 
+export const addPatientSurgeryDetails = async(record_id:string, surgeryDetails: SurgeryRecordDetails )=>{
+    if(!surgeryDetails || !record_id){
+        throw new Error("Surgery details & record_id must be provided.");
+    }
+    return prisma.$transaction(async (tx) => {
+        const existingSurgery = await tx.patient_surgery_details.findFirst({
+            where: { record_id },
+        });
+        if (existingSurgery) {
+            throw new Error("Surgery details for this medical record already exist.");
+        }
+        await tx.patient_medical_records.update({
+            where: {record_id},
+            data: { updated_at: new Date() }
+        });
+        const newSurgeryDetails =await tx.patient_surgery_details.create({
+            data: {
+                record_id: record_id,
+                ...surgeryDetails
+            }
+        });
+        return newSurgeryDetails;
+    })
+
+}
+
+export const addPatientPrescription = async(record_id: string, prescription_url:string)=>{
+    if (!record_id || !prescription_url) {
+        throw new Error("Record ID and prescription URL must be provided.");
+    }
+    const document = await prisma.patient_documents.upsert({
+        where: {
+            // This field MUST be unique in your schema
+            record_id: record_id,
+        },
+        update: {
+            // Data to apply if the document IS found
+            prescriptions: prescription_url,
+            updated_at: new Date(),
+        },
+        create: {
+            // Data to use if the document IS NOT found
+            record_id: record_id,
+            prescriptions: prescription_url,
+            created_at: new Date(),
+        }
+    });
+
+    return document;
+}
+
+export const removePatientPrescription = async (record_id: string) => {
+    // 1. Validate the input
+    if (!record_id) {
+        throw new Error("Record ID must be provided.");
+    }
+
+    // 2. Find the document by its unique record_id and update it
+    const updatedDocument = await prisma.patient_documents.update({
+        where: {
+            record_id: record_id,
+        },
+        data: {
+            // Set the prescriptions field to null to "remove" it
+            prescriptions: null,
+            // Also update the timestamp to reflect the change
+            updated_at: new Date(),
+        }
+    });
+
+    return updatedDocument;
+}
+
+export const addPatientLabResults = async(record_id: string, lab_results_url:string)=>{
+    if (!record_id || !lab_results_url) {
+        throw new Error("Record ID and lab results URL must be provided.");
+    }
+    const document = await prisma.patient_documents.upsert({
+        where: {
+            // This field MUST be unique in your schema
+            record_id: record_id,
+        },
+        update: {
+            // Data to apply if the document IS found
+            lab_results: lab_results_url,
+            updated_at: new Date(),
+        },
+        create: {
+            // Data to use if the document IS NOT found
+            record_id: record_id,
+            prescriptions: lab_results_url,
+            created_at: new Date(),
+        }
+    });
+
+    return document;
+}
+
+export const removePatientLabResults = async (record_id: string) => {
+    // 1. Validate the input
+    if (!record_id) {
+        throw new Error("Record ID must be provided.");
+    }
+
+    // 2. Find the document by its unique record_id and update it
+    const updatedDocument = await prisma.patient_documents.update({
+        where: {
+            record_id: record_id,
+        },
+        data: {
+            // Set the prescriptions field to null to "remove" it
+           lab_results: null,
+            // Also update the timestamp to reflect the change
+            updated_at: new Date(),
+        }
+    });
+
+    return updatedDocument;
+}

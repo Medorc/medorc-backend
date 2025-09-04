@@ -1,4 +1,10 @@
 
+export interface PatientIdentifier{
+    patient_id?: string,
+    shc_code?: string,
+    qr_code?: string
+}
+
 export interface PatientDetails {
     date_of_birth: Date,
     full_name: string,

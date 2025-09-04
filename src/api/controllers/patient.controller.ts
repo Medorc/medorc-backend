@@ -1,6 +1,6 @@
 import * as patientService from "../../services/patient.services.js";
 import {type Request, type Response} from "express";
-import type {EmergencyContact, Lifestyle} from "../../types/application.js";
+import type {EmergencyContact, Lifestyle, PatientIdentifier} from "../../types/application.js";
 
 export const handleGetPatientProfile = async(req: Request, res: Response) => {
     try {
@@ -135,15 +135,14 @@ export const handleGetPatientEmergencyContacts = async(req: Request, res: Respon
             return res.status(400).json({ error: "Invalid token payload." });
         }
 
-        let patientEmergencyContacts;
+        let patientIdentifier: PatientIdentifier = {};
 
         if (userPayload.role === "patient") {
             // Patient: must have user id in token
             if (!userPayload.id) {
                 return res.status(400).json({ error: "User ID missing in token." });
             }
-            const userId = String(userPayload.id);
-            patientEmergencyContacts = await patientService.getPatientEmergencyContacts(userId);
+            patientIdentifier.patient_id = String(userPayload.id);
         } else if (userPayload.role === "doctor" || userPayload.role === "hospital" || userPayload.role === "extern") {
             // Others: must provide shc_code or qr_code in query
             const { shc_code, qr_code } = req.query;
@@ -154,15 +153,13 @@ export const handleGetPatientEmergencyContacts = async(req: Request, res: Respon
                 });
             }
 
-            patientEmergencyContacts = await patientService.getPatientEmergencyContacts(
-                undefined,
-                shc_code as string | undefined,
-                qr_code as string | undefined
-            );
+            if(shc_code)patientIdentifier.shc_code = shc_code as string ;
+            if(qr_code)patientIdentifier.qr_code = qr_code as string ;
+
         } else {
             return res.status(403).json({ error: "Unauthorized role." });
         }
-
+        const patientEmergencyContacts = await patientService.getPatientEmergencyContacts(patientIdentifier);
         return res.status(200).json({ data: patientEmergencyContacts });
     }
     catch(err){
@@ -177,15 +174,14 @@ export const handleGetPatientDataLogs = async(req: Request, res: Response) => {
             return res.status(400).json({ error: "Invalid token payload." });
         }
 
-        let patientDataLogs;
+        let patientIdentifier: PatientIdentifier = {};
 
         if (userPayload.role === "patient") {
             // Patient: must have user id in token
             if (!userPayload.id) {
                 return res.status(400).json({ error: "User ID missing in token." });
             }
-            const userId = String(userPayload.id);
-            patientDataLogs = await patientService.getPatientDataLogs(userId);
+            patientIdentifier.patient_id = String(userPayload.id);
         } else if (userPayload.role === "doctor" || userPayload.role === "hospital" || userPayload.role === "extern") {
             // Others: must provide shc_code or qr_code in query
             const { shc_code, qr_code } = req.query;
@@ -196,15 +192,13 @@ export const handleGetPatientDataLogs = async(req: Request, res: Response) => {
                 });
             }
 
-            patientDataLogs = await patientService.getPatientDataLogs(
-                undefined,
-                shc_code as string | undefined,
-                qr_code as string | undefined
-            );
+            if(shc_code)patientIdentifier.shc_code = shc_code as string ;
+            if(qr_code)patientIdentifier.qr_code = qr_code as string ;
+
         } else {
             return res.status(403).json({ error: "Unauthorized role." });
         }
-
+        const patientDataLogs = await patientService.getPatientDataLogs(patientIdentifier);
         return res.status(200).json({ data: patientDataLogs });
     }
     catch(err){
@@ -485,7 +479,7 @@ export const handleCreatePatientRecord = async (req: Request, res: Response) => 
             return res.status(403).json({ error: 'Invalid token payload.' });
         }
 
-        let patientIdentifier: { patient_id?: string; shc_code?: string; qr_code?: string; } = {};
+        let patientIdentifier: PatientIdentifier= {};
 
         if (userPayload.role === 'patient') {
             if (!('id' in userPayload)) {
@@ -540,3 +534,315 @@ export const handleCreatePatientRecord = async (req: Request, res: Response) => 
         return res.status(500).json({ error: 'An unexpected error occurred while creating the record.' });
     }
 };
+
+export const handleAddPatientHospitalizationDetails = async (req: Request, res: Response) => {
+    try{
+        const userPayload = req.user;
+        const hospitalizationDetails = req.body.hospitalizationDetails;
+        const record_id = req.params.record_id;
+        if(!hospitalizationDetails) {
+            res.status(400).json({ error: 'Hospitalization details & record_id is required.' });
+        }
+        if(!record_id){
+            res.status(400).json({error:"Record id must be provided."});
+        }
+        if (typeof userPayload !== 'object' || !userPayload) {
+            return res.status(403).json({ error: 'Invalid token payload.' });
+        }
+        const newHospitalizationDetails = await patientService.addPatientHospitalizationDetails(record_id!, hospitalizationDetails);
+        //--LOGGING CALL
+        try{
+            let patientIdentifier: PatientIdentifier= {};
+            const shc_code = req.body.shc_code;
+            const qr_code = req.body.qr_code;
+            if (userPayload.role === 'patient') {
+                if (!('id' in userPayload)) {
+                    return res.status(400).json({ error: 'Patient ID missing in token.' });
+                }
+                patientIdentifier = { patient_id: String(userPayload.id) };
+            } else if (['doctor', 'hospital'].includes(userPayload.role as string)) {
+                if (!shc_code && !qr_code) {
+                    return res.status(400).json({
+                        error: "An 'shc_code' or 'qr_code' must be provided in the request body for this role.",
+                    });
+                }
+                patientIdentifier = { shc_code, qr_code };
+            } else {
+                return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
+            }
+
+            const creatorId = (userPayload as any).id;
+            const creatorRole = (userPayload as any).role;
+
+            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] Added hospitalization details to record_id [${record_id}]]`;
+
+            // Call the logging service (fire-and-forget)
+            await patientService.addPatientDataLog(patientIdentifier, logMessage);
+        }
+        catch(logError){
+            console.error("Failed to add data log:", logError);
+        }
+        return res.status(201).json({message: 'Hospitalization details added successfully.', data: newHospitalizationDetails});
+    }
+    catch(error){
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while adding hospitalization details.' });
+    }
+}
+
+export const handleAddPatientSurgeryDetails = async (req: Request, res: Response) => {
+    try{
+        const userPayload = req.user;
+        const surgeryDetails = req.body.surgeryDetails;
+        const record_id = req.params.record_id;
+        if(!surgeryDetails || !record_id) {
+            return res.status(400).json({ error: 'SurgeryDetails & record_id must be provided.' });
+        }
+        if (typeof userPayload !== 'object' || !userPayload) {
+            return res.status(403).json({ error: 'Invalid token payload.' });
+        }
+        const newSurgeryDetails = await patientService.addPatientSurgeryDetails(record_id!, surgeryDetails);
+        //LOGGING CALL
+        try{
+            let patientIdentifier: PatientIdentifier= {};
+            const shc_code = req.body.shc_code;
+            const qr_code = req.body.qr_code;
+            if (userPayload.role === 'patient') {
+                if (!('id' in userPayload)) {
+                    return res.status(400).json({ error: 'Patient ID missing in token.' });
+                }
+                patientIdentifier = { patient_id: String(userPayload.id) };
+            } else if (['doctor', 'hospital'].includes(userPayload.role as string)) {
+                if (!shc_code && !qr_code) {
+                    return res.status(400).json({
+                        error: "An 'shc_code' or 'qr_code' must be provided in the request body for this role.",
+                    });
+                }
+                patientIdentifier = { shc_code, qr_code };
+            } else {
+                return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
+            }
+
+            const creatorId = (userPayload as any).id;
+            const creatorRole = (userPayload as any).role;
+
+            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] Added surgery details to record_id [${record_id}]]`;
+
+            // Call the logging service (fire-and-forget)
+            await patientService.addPatientDataLog(patientIdentifier, logMessage);
+        }
+        catch(logError){
+            console.error("Failed to add data log:", logError);
+        }
+        return res.status(201).json({message: 'Surgery Details added successfully.', data: newSurgeryDetails});
+    }
+    catch(error){
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while creating the record.' });
+    }
+}
+
+export const handleAddPatientPrescription = async (req: Request, res: Response) => {
+    try{
+        const userPayload = req.user;
+        const record_id = req.params.record_id;
+        const {prescription_url, shc_code,qr_code} = req.body;
+
+        if(!prescription_url) {
+            return res.status(400).json({ error: 'Prescription url & record_id must be provided.' });
+        }
+        if (typeof userPayload !== 'object' || !userPayload) {
+            return res.status(403).json({ error: 'Invalid token payload.' });
+        }
+        const newDocument = await patientService.addPatientPrescription(record_id!, prescription_url);
+        //LOGGING CALL
+        try{
+            let patientIdentifier: PatientIdentifier= {};
+            if (userPayload.role === 'patient') {
+                if (!('id' in userPayload)) {
+                    return res.status(400).json({ error: 'Patient ID missing in token.' });
+                }
+                patientIdentifier = { patient_id: String(userPayload.id) };
+            } else if (['doctor', 'hospital'].includes(userPayload.role as string)) {
+                if (!shc_code && !qr_code) {
+                    return res.status(400).json({
+                        error: "An 'shc_code' or 'qr_code' must be provided in the request body for this role.",
+                    });
+                }
+                patientIdentifier = { shc_code, qr_code };
+            } else {
+                return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
+            }
+
+            const creatorId = (userPayload as any).id;
+            const creatorRole = (userPayload as any).role;
+
+            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] Added prescription to record_id [${record_id}]]`;
+
+            // Call the logging service (fire-and-forget)
+            await patientService.addPatientDataLog(patientIdentifier, logMessage);
+        }
+        catch(logError){
+            console.error("Failed to add prescription", logError);
+        }
+        return res.status(201).json({message: 'Prescription added successfully.', data: newDocument});
+    }catch(error){
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while adding prescription.' });
+    }
+}
+
+export const handleRemovePatientPrescription = async (req: Request, res: Response) => {
+    try {
+        const userPayload = req.user;
+        const record_id = req.params.record_id;
+        const {shc_code,qr_code} = req.body;
+        if (typeof userPayload !== 'object' || !userPayload) {
+            return res.status(403).json({ error: 'Invalid token payload.' });
+        }
+        const updatedDoc = await patientService.removePatientPrescription(record_id!);
+        //LOGGING CALL
+        try{
+            let patientIdentifier: PatientIdentifier= {};
+            if (userPayload.role === 'patient') {
+                if (!('id' in userPayload)) {
+                    return res.status(400).json({ error: 'Patient ID missing in token.' });
+                }
+                patientIdentifier = { patient_id: String(userPayload.id) };
+            } else if (['doctor', 'hospital'].includes(userPayload.role as string)) {
+                if (!shc_code && !qr_code) {
+                    return res.status(400).json({
+                        error: "An 'shc_code' or 'qr_code' must be provided in the request body for this role.",
+                    });
+                }
+                patientIdentifier = { shc_code, qr_code };
+            } else {
+                return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
+            }
+
+            const creatorId = (userPayload as any).id;
+            const creatorRole = (userPayload as any).role;
+
+            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] removed prescription from record_id [${record_id}]]`;
+
+            // Call the logging service (fire-and-forget)
+            await patientService.addPatientDataLog(patientIdentifier, logMessage);
+        }
+        catch(logError){
+            console.error("Failed to prescription", logError);
+        }
+        return res.status(201).json({message: 'Prescription removed successfully.', data: updatedDoc});
+    }catch(error){
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while removing prescription.' });
+    }
+}
+
+export const handleAddPatientLabResults = async (req: Request, res: Response) => {
+    try{
+        const userPayload = req.user;
+        const record_id = req.params.record_id;
+        const {lab_results_url, shc_code,qr_code} = req.body;
+
+        if(!lab_results_url) {
+            return res.status(400).json({ error: 'Lab results url & record_id must be provided.' });
+        }
+        if (typeof userPayload !== 'object' || !userPayload) {
+            return res.status(403).json({ error: 'Invalid token payload.' });
+        }
+        const newDocument = await patientService.addPatientLabResults(record_id!, lab_results_url);
+        //LOGGING CALL
+        try{
+            let patientIdentifier: PatientIdentifier= {};
+            if (userPayload.role === 'patient') {
+                if (!('id' in userPayload)) {
+                    return res.status(400).json({ error: 'Patient ID missing in token.' });
+                }
+                patientIdentifier = { patient_id: String(userPayload.id) };
+            } else if (['doctor', 'hospital'].includes(userPayload.role as string)) {
+                if (!shc_code && !qr_code) {
+                    return res.status(400).json({
+                        error: "An 'shc_code' or 'qr_code' must be provided in the request body for this role.",
+                    });
+                }
+                patientIdentifier = { shc_code, qr_code };
+            } else {
+                return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
+            }
+
+            const creatorId = (userPayload as any).id;
+            const creatorRole = (userPayload as any).role;
+
+            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] Added Lab results to record_id [${record_id}]]`;
+
+            // Call the logging service (fire-and-forget)
+            await patientService.addPatientDataLog(patientIdentifier, logMessage);
+        }
+        catch(logError){
+            console.error("Failed to add lab results", logError);
+        }
+        return res.status(201).json({message: 'Lab results added successfully.', data: newDocument});
+    }catch(error){
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while adding lab results.' });
+    }
+}
+
+export const handleRemovePatientLabResults = async (req: Request, res: Response) => {
+    try {
+        const userPayload = req.user;
+        const record_id = req.params.record_id;
+        const {shc_code,qr_code} = req.body;
+        if (typeof userPayload !== 'object' || !userPayload) {
+            return res.status(403).json({ error: 'Invalid token payload.' });
+        }
+        const updatedDoc = await patientService.removePatientLabResults(record_id!);
+        //LOGGING CALL
+        try{
+            let patientIdentifier: PatientIdentifier= {};
+            if (userPayload.role === 'patient') {
+                if (!('id' in userPayload)) {
+                    return res.status(400).json({ error: 'Patient ID missing in token.' });
+                }
+                patientIdentifier = { patient_id: String(userPayload.id) };
+            } else if (['doctor', 'hospital'].includes(userPayload.role as string)) {
+                if (!shc_code && !qr_code) {
+                    return res.status(400).json({
+                        error: "An 'shc_code' or 'qr_code' must be provided in the request body for this role.",
+                    });
+                }
+                patientIdentifier = { shc_code, qr_code };
+            } else {
+                return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
+            }
+
+            const creatorId = (userPayload as any).id;
+            const creatorRole = (userPayload as any).role;
+
+            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] removed lab results from record_id [${record_id}]]`;
+
+            // Call the logging service (fire-and-forget)
+            await patientService.addPatientDataLog(patientIdentifier, logMessage);
+        }
+        catch(logError){
+            console.error("Failed to prescription", logError);
+        }
+        return res.status(201).json({message: 'Lab results removed successfully.', data: updatedDoc});
+    }catch(error){
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while removing lab results.' });
+    }
+}
+

@@ -19,5 +19,11 @@ patientRoute.post("/profile/emergency-contact",authenticateToken,patientControll
 patientRoute.delete("/profile/emergency-contact",authenticateToken,patientController.handleDeletePatientEmergencyContact);
 
 patientRoute.post("/records",authenticateToken, patientController.handleCreatePatientRecord);
+patientRoute.post("/records/:record_id/hospitalization",authenticateToken,patientController.handleAddPatientHospitalizationDetails);
+patientRoute.post("/records/:record_id/surgery",authenticateToken,patientController.handleAddPatientSurgeryDetails);
+patientRoute.put("/records/:record_id/prescription",authenticateToken,patientController.handleAddPatientPrescription);
+patientRoute.delete("/records/:record_id/prescription",authenticateToken,patientController.handleRemovePatientPrescription);
+patientRoute.put("/records/:record_id/lab-results",authenticateToken,patientController.handleAddPatientLabResults);
+patientRoute.delete("/records/:record_id/lab-results",authenticateToken,patientController.handleRemovePatientLabResults);
 
 export default patientRoute;

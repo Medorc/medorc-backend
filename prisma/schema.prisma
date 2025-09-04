@@ -178,7 +178,7 @@ model patient_surgery_details {
 
 model patient_documents {
   doc_id         String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  record_id      String                    @db.Uuid
+  record_id      String                    @db.Uuid @unique
   prescriptions  String?                   @db.Text
   lab_results    String?                   @db.Text
   created_at     DateTime?                 @db.Timestamp()
