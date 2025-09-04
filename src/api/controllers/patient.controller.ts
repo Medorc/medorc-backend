@@ -1,6 +1,6 @@
 import * as patientService from "../../services/patient.services.js";
 import {type Request, type Response} from "express";
-import type {EmergencyContact, Lifestyle, PatientIdentifier} from "../../types/application.js";
+import type {EmergencyContact, Lifestyle, PatientIdentifier, SearchOptions} from "../../types/application.js";
 
 export const handleGetPatientProfile = async(req: Request, res: Response) => {
     try {
@@ -10,7 +10,8 @@ export const handleGetPatientProfile = async(req: Request, res: Response) => {
         }
 
         let patientProfile;
-
+        const shc_code = req.body.shc_code;
+        const qr_code = req.body.qr_code;
         if (userPayload.role === "patient") {
             // Patient: must have user id in token
             if (!userPayload.id) {
@@ -19,8 +20,7 @@ export const handleGetPatientProfile = async(req: Request, res: Response) => {
             const userId = String(userPayload.id);
             patientProfile = await patientService.getPatientProfile(userId);
         } else if (userPayload.role === "doctor" || userPayload.role === "hospital" || userPayload.role === "extern") {
-            // Others: must provide shc_code or qr_code in query
-            const { shc_code, qr_code } = req.query;
+            // Others: must provide shc_code or qr_code in body
 
             if (!shc_code && !qr_code) {
                 return res.status(400).json({
@@ -36,7 +36,37 @@ export const handleGetPatientProfile = async(req: Request, res: Response) => {
         } else {
             return res.status(403).json({ error: "Unauthorized role." });
         }
+        //LOGGING CALL
+        try{
+            let patientIdentifier: PatientIdentifier= {};
+            if (userPayload.role === 'patient') {
+                if (!('id' in userPayload)) {
+                    return res.status(400).json({ error: 'Patient ID missing in token.' });
+                }
+                patientIdentifier = { patient_id: String(userPayload.id) };
+            } else if (['doctor', 'hospital'].includes(userPayload.role as string)) {
+                if (!shc_code && !qr_code) {
+                    return res.status(400).json({
+                        error: "An 'shc_code' or 'qr_code' must be provided in the request body for this role.",
+                    });
+                }
+                patientIdentifier = { shc_code, qr_code };
+            } else {
+                return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
+            }
 
+            const visitorId = (userPayload as any).id;
+            const visitorRole = (userPayload as any).role;
+            if(visitorRole!="patient") {
+                const logMessage = `${new Date().toISOString()} - ${visitorRole.toUpperCase()} [${visitorId}] visited your profile]]`;
+
+                // Call the logging service (fire-and-forget)
+                await patientService.addPatientDataLog(patientIdentifier, logMessage);
+            }
+        }
+        catch(logError){
+            console.error("Failed to add data log:", logError);
+        }
         return res.status(200).json({ data: patientProfile });
     }
     catch(err){
@@ -846,3 +876,118 @@ export const handleRemovePatientLabResults = async (req: Request, res: Response)
     }
 }
 
+export const handleUpdatePatientRecordVisibility = async (req: Request, res: Response) => {
+    try {
+        const curVisibility = req.body.curVisibility;
+        const record_id = req.params.record_id;
+        if(!record_id || curVisibility==null) {
+            return res.status(403).json({ error: 'CurVisibility & record_id must be provided.' });
+        }
+        const result = await patientService.updatePatientRecordVisibility(record_id, curVisibility);
+        res.status(200).json({message:"visibility updated successfully.", data: result});
+    }
+    catch(error){
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while updating record visibility.' });
+    }
+
+}
+
+export const handleGetPatientRecords = async (req: Request, res: Response) => {
+    try{
+        const userPayload = req.user;
+        const searchOptions: SearchOptions = req.body.searchOptions;
+        const shc_code = req.body.shc_code;
+        const qr_code = req.body.qr_code;
+        const searchQuery = req.body.searchQuery;
+        if (typeof userPayload !== 'object' || !userPayload) {
+            return res.status(403).json({ error: 'Invalid token payload.' });
+        }
+        let patientIdentifier: PatientIdentifier= {};
+        if (userPayload.role === 'patient') {
+            if (!('id' in userPayload)) {
+                return res.status(400).json({ error: 'Patient ID missing in token.' });
+            }
+            patientIdentifier = { patient_id: String(userPayload.id) };
+        } else if (['doctor', 'hospital'].includes(userPayload.role as string)) {
+            if (!shc_code && !qr_code) {
+                return res.status(400).json({
+                    error: "An 'shc_code' or 'qr_code' must be provided in the request body for this role.",
+                });
+            }
+            patientIdentifier = { shc_code, qr_code };
+        } else {
+            return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
+        }
+        const records = await patientService.getPatientRecords(patientIdentifier, searchOptions, userPayload.role, searchQuery);
+        res.status(200).json({message: 'Records retrived successfully .', data: records});
+    }
+    catch(error){
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while retriving health records.' });
+    }
+}
+
+export const handleGetPatientSurgeryDetails = async (req: Request, res: Response) => {
+    try{
+        const record_id = req.params.record_id;
+        if(!record_id){
+            return res.status(403).json({ error: 'record Id must be provided' });
+        }
+        const surgeryDetails = await patientService.getPatientSurgeryDetails(record_id);
+        if (!surgeryDetails) {
+            return res.status(404).json({ message: 'No surgery details found for this record.' });
+        }
+        res.status(200).json(surgeryDetails);
+    }
+    catch(error){
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while retriving surgery details .' });
+    }
+}
+
+export const handleGetPatientHospitalizationDetails = async (req: Request, res: Response) => {
+    try{
+        const record_id = req.params.record_id;
+        if(!record_id){
+            return res.status(403).json({ error: 'record Id must be provided' });
+        }
+        const hospitalizationDetails = await patientService.getPatientHospitalizationDetails(record_id);
+        if (!hospitalizationDetails) {
+            return res.status(404).json({ message: 'No hospitalization details found for this record.' });
+        }
+        res.status(200).json(hospitalizationDetails);
+    }
+    catch(error){
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while retriving hospitalization details .' });
+    }
+}
+
+export const handleGetPatientDocuments = async (req: Request, res: Response) => {
+    try{
+        const record_id = req.params.record_id;
+        if(!record_id){
+            return res.status(403).json({ error: 'record Id must be provided' });
+        }
+        const documents = await patientService.getPatientDocuments(record_id);
+        if (!documents) {
+            return res.status(404).json({ message: 'No documents found for this record.' });
+        }
+        res.status(200).json(documents);
+    }
+    catch(error){
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while retriving documents .' });
+    }
+}

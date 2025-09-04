@@ -25,5 +25,12 @@ patientRoute.put("/records/:record_id/prescription",authenticateToken,patientCon
 patientRoute.delete("/records/:record_id/prescription",authenticateToken,patientController.handleRemovePatientPrescription);
 patientRoute.put("/records/:record_id/lab-results",authenticateToken,patientController.handleAddPatientLabResults);
 patientRoute.delete("/records/:record_id/lab-results",authenticateToken,patientController.handleRemovePatientLabResults);
+patientRoute.patch("/records/:record_id/visibility",authenticateToken,patientController.handleUpdatePatientRecordVisibility);
+
+patientRoute.get("/records",authenticateToken,patientController.handleGetPatientRecords);
+patientRoute.get("/records/:record_id/surgery",authenticateToken,patientController.handleGetPatientSurgeryDetails);
+patientRoute.get("/records/:record_id/hospitalization",authenticateToken,patientController.handleGetPatientHospitalizationDetails);
+patientRoute.get("/records/:record_id/documents",authenticateToken,patientController.handleGetPatientDocuments);
+
 
 export default patientRoute;

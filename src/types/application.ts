@@ -5,6 +5,11 @@ export interface PatientIdentifier{
     qr_code?: string
 }
 
+export interface SearchOptions{
+    entry_type:"All" |"Self" | "Hospital" | "Doctor",
+    sort_by:"None" |"Diagnosis" | "Time Asc" | "Time Desc",
+}
+
 export interface PatientDetails {
     date_of_birth: Date,
     full_name: string,

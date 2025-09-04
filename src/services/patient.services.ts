@@ -4,7 +4,7 @@ import type { JwtPayload } from 'jsonwebtoken';
 import {PrismaClient} from "@prisma/client";
 import {Prisma} from "@prisma/client";
 import type {PatientDetails, Lifestyle, EmergencyContact, Record,
-PatientIdentifier, HospitalizationRecordDetails, SurgeryRecordDetails} from "../types/application.js";
+PatientIdentifier, HospitalizationRecordDetails, SurgeryRecordDetails, SearchOptions} from "../types/application.js";
 
 const prisma = new PrismaClient();
 
@@ -658,4 +658,128 @@ export const removePatientLabResults = async (record_id: string) => {
     });
 
     return updatedDocument;
+}
+
+export const updatePatientRecordVisibility = async(record_id:string, curVisibility: boolean)=>{
+         return prisma.patient_medical_records.update({
+             where:{
+                 record_id:record_id
+             },
+             data:{
+                 visibility : !curVisibility
+             },
+             select:{
+                 record_id:true,
+                 visibility : true
+             }
+         });
+}
+
+export const getPatientRecords = async(patientIdentifier: PatientIdentifier, searchOptions: SearchOptions, userRole: string, searchQuery?:string)=>{
+    let patientWhereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patientIdentifier.patient_id, patientIdentifier.shc_code, patientIdentifier.qr_code);
+    const patient = await prisma.patients.findUnique({
+        where: patientWhereClause,
+        select: { patient_id: true } // We only need the patient's ID
+    });
+
+    if (!patient) {
+        // If no patient is found, return an empty array as there are no records
+        return [];
+    }
+
+    const recordsWhereClause: Prisma.patient_medical_recordsWhereInput = {
+        patient_id: patient.patient_id, // Filter records for this specific patient
+    };
+    if (userRole !== 'patient') {
+        recordsWhereClause.visibility = true;
+    }
+    if (searchOptions.entry_type && searchOptions.entry_type !== "All") {
+        recordsWhereClause.entry_type = searchOptions.entry_type;
+    }
+
+    if (searchQuery && searchQuery.trim() !== '') {
+        recordsWhereClause.OR = [
+            { diagnosis_name: { contains: searchQuery, mode: 'insensitive' } },
+            { doctor_name:    { contains: searchQuery, mode: 'insensitive' } },
+            { hospital_name:  { contains: searchQuery, mode: 'insensitive' } },
+        ];
+    }
+
+    let orderByClause: Prisma.patient_medical_recordsOrderByWithRelationInput = {};
+    switch (searchOptions.sort_by) {
+        case "Diagnosis":
+            orderByClause = { diagnosis_name: 'asc' };
+            break;
+        case "Time Asc":
+            orderByClause = { created_at: 'asc' };
+            break;
+        case "Time Desc":
+            orderByClause = { created_at: 'desc' };
+            break;
+        // If "None", the orderByClause remains an empty object, so no sorting is applied.
+    }
+
+    const rawRecords = await prisma.patient_medical_records.findMany({
+        where: recordsWhereClause,
+        orderBy: orderByClause,
+        include: {
+            _count: {
+                select: {
+                    patient_documents: true,
+                    // Count related hospitalization records
+                    patient_hospitalization_details: true,
+                    // Count related surgery records
+                    patient_surgery_details: true,
+                }
+            }
+        }
+    });
+
+    const formattedRecords = rawRecords.map(record => ({
+        record_id: record.record_id,
+        doctor_id: record.doctor_id,
+        doctor_name: record.doctor_name,
+        hospital_id: record.hospital_id,
+        hospital_name: record.hospital_name,
+        created_at: record.created_at,
+        updated_at: record.updated_at,
+        entry_type: record.entry_type,
+        diagnosis_name: record.diagnosis_name,
+        treatment_undergone: record.treatment_undergone,
+        visibility: record.visibility,
+        history_of_present_illness: record.history_of_present_illness,
+
+        // Check if the count of related records is greater than 0
+        is_hospitalized: record._count.patient_hospitalization_details > 0,
+        is_surgery: record._count.patient_surgery_details > 0,
+
+        document_count: record._count.patient_documents,
+        appointment_date: record.appointment_date,
+        reg_no: record.reg_no,
+    }));
+    return formattedRecords;
+}
+
+export const getPatientSurgeryDetails = async(record_id: string)=>{
+    return await prisma.patient_surgery_details.findFirst({
+        where: {
+            record_id: record_id,
+        }
+    });
+}
+
+export const getPatientHospitalizationDetails = async(record_id: string)=>{
+    return await prisma.patient_hospitalization_details.findFirst({
+        where: {
+            record_id: record_id,
+        }
+    });
+}
+
+export const getPatientDocuments = async(record_id: string)=>{
+    return await prisma.patient_documents.findFirst({
+        where: {
+            record_id: record_id,
+        }
+    });
 }
