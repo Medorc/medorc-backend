@@ -68,19 +68,19 @@ export const handleSignup = async(req: Request,res: Response)=>{
             data: result,
         });
 
-    }catch (err) {
-        let errorMessage = 'An unexpected error occurred.';
+    }catch (err: any) {
+        if (err?.code === 'P2002' && err.meta?.target) {
+            const field = err.meta.target[0]; // e.g., 'email' or 'phone_no'
+            const friendlyField = field.replace('_', ' '); // 'phone no'
 
-        // Check if the error is from Prisma, e.g., for a unique constraint violation
-        if (err && typeof err === 'object' && 'code' in err && err.code === 'P2002') {
-            return res.status(409).json({ error: 'A user with this email already exists.' });
+            // Send a specific and helpful error message
+            return res.status(409).json({
+                error: `An account with this ${friendlyField} already exists.`
+            });
         }
 
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        }
-
-        // Return a 400 for client-side errors or 500 for server errors
+        // Fallback for other errors
+        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
         res.status(400).json({ error: errorMessage });
     }
 

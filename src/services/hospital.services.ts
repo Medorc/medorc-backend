@@ -1,8 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import type { JwtPayload } from 'jsonwebtoken';
 import {PrismaClient} from "@prisma/client";
-import {Prisma} from "@prisma/client";
 import type {HospitalDetails, HospitalProfileCredentials} from "../types/application.js";
 
 const prisma = new PrismaClient();

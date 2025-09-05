@@ -131,15 +131,16 @@ export interface HospitalProfileCredentials{
 }
 
 export interface OrganizationDetails{
-    name:string,
-    type: string,
-    address:string,
-    description: string,
-    founded_on: Date,
-    website: string,
-    license_no: string,
-    license_valid_till:Date,
+    org_name:string,
+    org_type: string,
+    org_address:string,
+    org_description: string,
+    org_founded_on: string,
+    org_website: string,
+    org_license_no: string,
+    org_license_valid_till: string,
 }
+
 export interface ExternDetails{
     full_name: string,
     date_of_birth: Date,
