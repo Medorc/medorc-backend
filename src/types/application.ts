@@ -120,6 +120,16 @@ export interface HospitalDetails{
     verification_documents:string
 }
 
+export interface HospitalProfileCredentials{
+    address: string,
+    phone_no: string,
+    website:string,
+    type: string,
+    founded_on: Date,
+    license_no: string,
+    license_valid_till:Date,
+}
+
 export interface OrganizationDetails{
     name:string,
     type: string,
