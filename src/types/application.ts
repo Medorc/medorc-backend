@@ -98,6 +98,13 @@ export interface DoctorDetails{
     verification_documents: string
 }
 
+export interface DoctorProfileCredentials{
+    license_no: string,
+    years_of_experience: number,
+    hospital_affiliation: string,
+    specializations: string,
+}
+
 export interface HospitalDetails{
     name: string,
     photo: string,
