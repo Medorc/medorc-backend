@@ -1,7 +1,7 @@
 # ## IDE / Editor Directories ##
 .idea/
 # ## Environment Variables ##
-.env.local
+.env
 # ## Dependencies ##
 node_modules/
 /src/generated/prisma
