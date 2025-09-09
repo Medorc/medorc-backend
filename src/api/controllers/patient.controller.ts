@@ -8,12 +8,9 @@ export const handleGetPatientProfile = async(req: Request, res: Response) => {
         if (!userPayload || typeof userPayload !== "object") {
             return res.status(400).json({ error: "Invalid token payload." });
         }
-
+        console.log(userPayload);
         let patientProfile;
-        const shc_code_raw = req.query.shc_code;
-        const qr_code_raw = req.query.qr_code;
-        const shc_code = typeof shc_code_raw === 'string' ? shc_code_raw : undefined;
-        const qr_code = typeof qr_code_raw === 'string' ? qr_code_raw : undefined;
+
         // --- END OF FIX ---
         if (userPayload.role === "patient") {
             // Patient: must have user id in token
@@ -24,7 +21,11 @@ export const handleGetPatientProfile = async(req: Request, res: Response) => {
             patientProfile = await patientService.getPatientProfile(userId);
         } else if (userPayload.role === "doctor" || userPayload.role === "hospital" || userPayload.role === "extern") {
             // Others: must provide shc_code or qr_code in body
+            const shc_code_raw = req.query.shc_code;
+            const qr_code_raw = req.query.qr_code;
 
+            const shc_code = typeof shc_code_raw === 'string' ? shc_code_raw : undefined;
+            const qr_code = typeof qr_code_raw === 'string' ? qr_code_raw : undefined;
             if (!shc_code && !qr_code) {
                 return res.status(400).json({
                     error: "Doctor must provide either shc_code or qr_code in query.",
@@ -48,6 +49,11 @@ export const handleGetPatientProfile = async(req: Request, res: Response) => {
                 }
                 patientIdentifier = { patient_id: String(userPayload.id) };
             } else if (['doctor', 'hospital'].includes(userPayload.role as string)) {
+                const shc_code_raw = req.query.shc_code;
+                const qr_code_raw = req.query.qr_code;
+
+                const shc_code = typeof shc_code_raw === 'string' ? shc_code_raw : undefined;
+                const qr_code = typeof qr_code_raw === 'string' ? qr_code_raw : undefined;
                 if (!shc_code && !qr_code) {
                     return res.status(400).json({
                         error: "An 'shc_code' or 'qr_code' must be provided in the request query for this role.",
