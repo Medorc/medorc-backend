@@ -1,8 +1,8 @@
 
 export interface PatientIdentifier{
-    patient_id?: string,
-    shc_code?: string,
-    qr_code?: string
+    patient_id?: string ,
+    shc_code?: string | undefined,
+    qr_code?: string | undefined
 }
 
 export interface SearchOptions{

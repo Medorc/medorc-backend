@@ -10,8 +10,11 @@ export const handleGetPatientProfile = async(req: Request, res: Response) => {
         }
 
         let patientProfile;
-        const shc_code = req.body.shc_code;
-        const qr_code = req.body.qr_code;
+        const shc_code_raw = req.query.shc_code;
+        const qr_code_raw = req.query.qr_code;
+        const shc_code = typeof shc_code_raw === 'string' ? shc_code_raw : undefined;
+        const qr_code = typeof qr_code_raw === 'string' ? qr_code_raw : undefined;
+        // --- END OF FIX ---
         if (userPayload.role === "patient") {
             // Patient: must have user id in token
             if (!userPayload.id) {
@@ -47,7 +50,7 @@ export const handleGetPatientProfile = async(req: Request, res: Response) => {
             } else if (['doctor', 'hospital'].includes(userPayload.role as string)) {
                 if (!shc_code && !qr_code) {
                     return res.status(400).json({
-                        error: "An 'shc_code' or 'qr_code' must be provided in the request body for this role.",
+                        error: "An 'shc_code' or 'qr_code' must be provided in the request query for this role.",
                     });
                 }
                 patientIdentifier = { shc_code, qr_code };
