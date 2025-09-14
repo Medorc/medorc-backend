@@ -6,6 +6,7 @@ import patientRoute from "./routes/patient.routes.js";
 import doctorRoute from "./routes/doctor.routes.js";
 import hospitalRoute from "./routes/hospital.routes.js";
 import externRoute from "./routes/extern.routes.js";
+import * as orbyController from "./controllers/orby.controller.js";
 
 const mainRouter = express.Router();
 
@@ -17,5 +18,5 @@ mainRouter.use("/patient", patientRoute);
 mainRouter.use("/doctor", doctorRoute);
 mainRouter.use("/hospital", hospitalRoute);
 mainRouter.use("/extern", externRoute);
-
+mainRouter.post("/webhook", orbyController.handleWebhook);
 export default mainRouter;
