@@ -8,7 +8,7 @@ export const handleGetPatientProfile = async(req: Request, res: Response) => {
         if (!userPayload || typeof userPayload !== "object") {
             return res.status(400).json({ error: "Invalid token payload." });
         }
-        console.log(userPayload);
+        
         let patientProfile;
 
         // --- END OF FIX ---
@@ -253,7 +253,9 @@ export const handleUpdatePatientVisibility = async(req: Request, res: Response) 
         }
 
         let updatedPatientVisibility;
+
         let curVisibility = req.body.curVisibility;
+        console.log("curVisibility:", curVisibility);
         if(curVisibility===null){
             res.status(400).json({ error: "Visibility does not exist." });
         }
