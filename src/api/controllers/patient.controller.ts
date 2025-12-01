@@ -214,7 +214,7 @@ export const handleGetPatientDataLogs = async(req: Request, res: Response) => {
         }
 
         let patientIdentifier: PatientIdentifier = {};
-
+            
         if (userPayload.role === "patient") {
             // Patient: must have user id in token
             if (!userPayload.id) {
@@ -519,9 +519,9 @@ export const handleCreatePatientRecord = async (req: Request, res: Response) => 
         if (typeof userPayload !== 'object' || !userPayload) {
             return res.status(403).json({ error: 'Invalid token payload.' });
         }
-
+        
         let patientIdentifier: PatientIdentifier= {};
-
+        
         if (userPayload.role === 'patient') {
             if (!('id' in userPayload)) {
                 return res.status(400).json({ error: 'Patient ID missing in token.' });
@@ -537,7 +537,7 @@ export const handleCreatePatientRecord = async (req: Request, res: Response) => 
         } else {
             return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
         }
-
+        
         // Call the service with the correct patient identifier, record data, AND the creator's payload
         const newRecord = await patientService.createPatientRecord(
             patientIdentifier,
@@ -549,7 +549,7 @@ export const handleCreatePatientRecord = async (req: Request, res: Response) => 
             },
             userPayload // This is the required addition
         );
-         //--LOGGING CALL
+        //--LOGGING CALL
          try{
 
              const creatorId = (userPayload as any).id;
@@ -676,7 +676,7 @@ export const handleAddPatientSurgeryDetails = async (req: Request, res: Response
         }
         catch(logError){
             console.error("Failed to add data log:", logError);
-        }
+        }     
         return res.status(201).json({message: 'Surgery Details added successfully.', data: newSurgeryDetails});
     }
     catch(error){

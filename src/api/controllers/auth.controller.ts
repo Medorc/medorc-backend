@@ -14,7 +14,8 @@ export const handleLogin = async (req: Request, res: Response) => {
         const {token} = await authService.login(email,password,role);
         res.status(200).json({
             message: 'User logged in successfully',
-            token
+            token,
+            role
         });
     }catch (err){
         let errorMessage = 'An unexpected error occurred.';
