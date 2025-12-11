@@ -70,7 +70,7 @@ export const getPatientProfile = async(patient_id?: string, shc_code?:string, qr
              console.log("User not found");
              throw new Error("User not found");
          }
-         return patientProfile;
+         return { ...patientProfile, role: "patient" };
 }
 
 export const getPatientPersonalDetails = async(patient_id?: string, shc_code?:string, qr_code?:string) =>{

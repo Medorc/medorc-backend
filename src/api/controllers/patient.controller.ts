@@ -2,86 +2,78 @@ import * as patientService from "../../services/patient.services.js";
 import {type Request, type Response} from "express";
 import type {EmergencyContact, Lifestyle, PatientIdentifier, SearchOptions} from "../../types/application.js";
 
-export const handleGetPatientProfile = async(req: Request, res: Response) => {
+export const handleGetPatientProfile = async (req: Request, res: Response) => {
     try {
         const userPayload = req.user;
+
         if (!userPayload || typeof userPayload !== "object") {
             return res.status(400).json({ error: "Invalid token payload." });
         }
-        
+
         let patientProfile;
 
-        // --- END OF FIX ---
+        // 1. Fetch Profile Logic
         if (userPayload.role === "patient") {
-            // Patient: must have user id in token
             if (!userPayload.id) {
                 return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
             patientProfile = await patientService.getPatientProfile(userId);
-        } else if (userPayload.role === "doctor" || userPayload.role === "hospital" || userPayload.role === "extern") {
-            // Others: must provide shc_code or qr_code in body
-            const shc_code_raw = req.query.shc_code;
-            const qr_code_raw = req.query.qr_code;
+        } else if (["doctor", "hospital", "extern"].includes(userPayload.role as string)) {
+            const shc_code = typeof req.query.shc_code === 'string' ? req.query.shc_code : undefined;
+            const qr_code = typeof req.query.qr_code === 'string' ? req.query.qr_code : undefined;
 
-            const shc_code = typeof shc_code_raw === 'string' ? shc_code_raw : undefined;
-            const qr_code = typeof qr_code_raw === 'string' ? qr_code_raw : undefined;
             if (!shc_code && !qr_code) {
                 return res.status(400).json({
-                    error: "Doctor must provide either shc_code or qr_code in query.",
+                    error: "Must provide either shc_code or qr_code in query parameters.",
                 });
             }
 
             patientProfile = await patientService.getPatientProfile(
                 undefined,
-                shc_code as string | undefined,
-                qr_code as string | undefined
+                shc_code,
+                qr_code
             );
         } else {
             return res.status(403).json({ error: "Unauthorized role." });
         }
-        //LOGGING CALL
-        try{
-            let patientIdentifier: PatientIdentifier= {};
-            if (userPayload.role === 'patient') {
-                if (!('id' in userPayload)) {
-                    return res.status(400).json({ error: 'Patient ID missing in token.' });
+
+        // 2. Logging Logic (Only runs if a profile was successfully found)
+        if (patientProfile) {
+            try {
+                const visitorId = (userPayload as any).id;
+                const visitorRole = (userPayload as any).role;
+
+                // We only log if the visitor is NOT the patient themselves
+                if (visitorRole !== "patient") {
+                    let patientIdentifier: PatientIdentifier = {};
+
+                    // Re-extract codes for logging scope
+                    const shc_code = typeof req.query.shc_code === 'string' ? req.query.shc_code : undefined;
+                    const qr_code = typeof req.query.qr_code === 'string' ? req.query.qr_code : undefined;
+                    
+                    patientIdentifier = { shc_code, qr_code };
+
+                    const logMessage = `${new Date().toISOString()} - ${visitorRole.toUpperCase()} [${visitorId}] visited your profile`;
+                    
+                    // Fire-and-forget logging
+                    await patientService.addPatientDataLog(patientIdentifier, logMessage);
                 }
-                patientIdentifier = { patient_id: String(userPayload.id) };
-            } else if (['doctor', 'hospital'].includes(userPayload.role as string)) {
-                const shc_code_raw = req.query.shc_code;
-                const qr_code_raw = req.query.qr_code;
-
-                const shc_code = typeof shc_code_raw === 'string' ? shc_code_raw : undefined;
-                const qr_code = typeof qr_code_raw === 'string' ? qr_code_raw : undefined;
-                if (!shc_code && !qr_code) {
-                    return res.status(400).json({
-                        error: "An 'shc_code' or 'qr_code' must be provided in the request query for this role.",
-                    });
-                }
-                patientIdentifier = { shc_code, qr_code };
-            } else {
-                return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
-            }
-
-            const visitorId = (userPayload as any).id;
-            const visitorRole = (userPayload as any).role;
-            if(visitorRole!="patient") {
-                const logMessage = `${new Date().toISOString()} - ${visitorRole.toUpperCase()} [${visitorId}] visited your profile]]`;
-
-                // Call the logging service (fire-and-forget)
-                await patientService.addPatientDataLog(patientIdentifier, logMessage);
+            } catch (logError) {
+                console.error("Failed to add data log:", logError);
+                // We do not stop the response if logging fails
             }
         }
-        catch(logError){
-            console.error("Failed to add data log:", logError);
-        }
-        return res.status(200).json({ data: patientProfile });
+
+        // --- THE FIX IS HERE ---
+        // Send patientProfile directly, not wrapped in { data: ... }
+        return res.status(200).json(patientProfile);
+
+    } catch (err) {
+        console.error("Controller Error:", err);
+        return res.status(500).json({ error: 'An unexpected error occurred.' });
     }
-    catch(err){
-        res.status(400).json({ error: 'An unexpected error occurred.' });
-    }
-}
+};
 
 export const handleGetPatientPersonalDetails = async(req: Request, res: Response) => {
     try {
@@ -255,7 +247,7 @@ export const handleUpdatePatientVisibility = async(req: Request, res: Response) 
         let updatedPatientVisibility;
 
         let curVisibility = req.body.curVisibility;
-        console.log("curVisibility:", curVisibility);
+
         if(curVisibility===null){
             res.status(400).json({ error: "Visibility does not exist." });
         }
@@ -438,7 +430,7 @@ export const handleAddPatientEmergencyContact = async(req: Request, res: Respons
         let emergencyContact:EmergencyContact = req.body.newEmergencyContact;
         let newEmergencyContact;
         if (!emergencyContact) {
-            console.log(emergencyContact);
+            
             res.status(400).json({error: "Emergency contact not provided."});
         }
         if (userPayload.role === "patient") {
