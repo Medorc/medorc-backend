@@ -18,7 +18,7 @@ patientRoute.patch("/profile/password",authenticateToken,patientController.handl
 patientRoute.post("/profile/emergency-contact",authenticateToken,patientController.handleAddPatientEmergencyContact);
 patientRoute.delete("/profile/emergency-contact",authenticateToken,patientController.handleDeletePatientEmergencyContact);
 
-patientRoute.post("/records",authenticateToken, patientController.handleCreatePatientRecord);
+patientRoute.post("/createrecord",authenticateToken, patientController.handleCreatePatientRecord);
 patientRoute.post("/records/:record_id/hospitalization",authenticateToken,patientController.handleAddPatientHospitalizationDetails);
 patientRoute.post("/records/:record_id/surgery",authenticateToken,patientController.handleAddPatientSurgeryDetails);
 patientRoute.put("/records/:record_id/prescription",authenticateToken,patientController.handleAddPatientPrescription);
@@ -27,7 +27,7 @@ patientRoute.put("/records/:record_id/lab-results",authenticateToken,patientCont
 patientRoute.delete("/records/:record_id/lab-results",authenticateToken,patientController.handleRemovePatientLabResults);
 patientRoute.patch("/records/:record_id/visibility",authenticateToken,patientController.handleUpdatePatientRecordVisibility);
 
-patientRoute.get("/records",authenticateToken,patientController.handleGetPatientRecords);
+patientRoute.post("/records",authenticateToken,patientController.handleGetPatientRecords);
 patientRoute.get("/records/:record_id/surgery",authenticateToken,patientController.handleGetPatientSurgeryDetails);
 patientRoute.get("/records/:record_id/hospitalization",authenticateToken,patientController.handleGetPatientHospitalizationDetails);
 patientRoute.get("/records/:record_id/documents",authenticateToken,patientController.handleGetPatientDocuments);

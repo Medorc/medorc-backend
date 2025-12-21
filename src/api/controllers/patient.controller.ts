@@ -914,7 +914,7 @@ export const handleGetPatientRecords = async (req: Request, res: Response) => {
                 return res.status(400).json({ error: 'Patient ID missing in token.' });
             }
             patientIdentifier = { patient_id: String(userPayload.id) };
-        } else if (['doctor', 'hospital'].includes(userPayload.role as string)) {
+        } else if (['doctor', 'hospital', 'extern'].includes(userPayload.role as string)) {
             if (!shc_code && !qr_code) {
                 return res.status(400).json({
                     error: "An 'shc_code' or 'qr_code' must be provided in the request body for this role.",
