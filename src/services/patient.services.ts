@@ -630,7 +630,9 @@ export const addPatientLabResults = async(record_id: string, lab_results_url:str
         create: {
             // Data to use if the document IS NOT found
             record_id: record_id,
-            prescriptions: lab_results_url,
+            // --- FIX START: Corrected 'prescriptions' to 'lab_results' ---
+            lab_results: lab_results_url,
+            // --- FIX END ---
             created_at: new Date(),
         }
     });
@@ -731,6 +733,12 @@ export const getPatientRecords = async(patientIdentifier: PatientIdentifier, sea
                     // Count related surgery records
                     patient_surgery_details: true,
                 }
+            },
+            hospital: {
+                select: { name: true }
+            },
+            doctor: {
+                select: { full_name: true }
             }
         }
     });
@@ -738,9 +746,9 @@ export const getPatientRecords = async(patientIdentifier: PatientIdentifier, sea
     const formattedRecords = rawRecords.map(record => ({
         record_id: record.record_id,
         doctor_id: record.doctor_id,
-        doctor_name: record.doctor_name,
+        doctor_name: record.doctor_name || record.doctor?.full_name || "Unknown Doctor",
         hospital_id: record.hospital_id,
-        hospital_name: record.hospital_name,
+        hospital_name: record.hospital_name || record.hospital?.name || "Unknown Hospital",
         created_at: record.created_at,
         updated_at: record.updated_at,
         entry_type: record.entry_type,
@@ -749,7 +757,6 @@ export const getPatientRecords = async(patientIdentifier: PatientIdentifier, sea
         visibility: record.visibility,
         history_of_present_illness: record.history_of_present_illness,
 
-        // Check if the count of related records is greater than 0
         is_hospitalized: record._count.patient_hospitalization_details > 0,
         is_surgery: record._count.patient_surgery_details > 0,
 
@@ -783,4 +790,3 @@ export const getPatientDocuments = async(record_id: string)=>{
         }
     });
 }
-
