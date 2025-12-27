@@ -681,16 +681,15 @@ export const getPatientRecords = async(patientIdentifier: PatientIdentifier, sea
     let patientWhereClause: Prisma.patientsWhereUniqueInput = getPatientWhereClause(patientIdentifier.patient_id, patientIdentifier.shc_code, patientIdentifier.qr_code);
     const patient = await prisma.patients.findUnique({
         where: patientWhereClause,
-        select: { patient_id: true } // We only need the patient's ID
+        select: { patient_id: true }
     });
 
     if (!patient) {
-        // If no patient is found, return an empty array as there are no records
         return [];
     }
 
     const recordsWhereClause: Prisma.patient_medical_recordsWhereInput = {
-        patient_id: patient.patient_id, // Filter records for this specific patient
+        patient_id: patient.patient_id,
     };
     if (userRole !== 'patient') {
         recordsWhereClause.visibility = true;
@@ -718,7 +717,6 @@ export const getPatientRecords = async(patientIdentifier: PatientIdentifier, sea
         case "Time Desc":
             orderByClause = { created_at: 'desc' };
             break;
-        // If "None", the orderByClause remains an empty object, so no sorting is applied.
     }
 
     const rawRecords = await prisma.patient_medical_records.findMany({
@@ -728,17 +726,36 @@ export const getPatientRecords = async(patientIdentifier: PatientIdentifier, sea
             _count: {
                 select: {
                     patient_documents: true,
-                    // Count related hospitalization records
                     patient_hospitalization_details: true,
-                    // Count related surgery records
                     patient_surgery_details: true,
                 }
             },
             hospital: {
-                select: { name: true }
+                select: { 
+                    name: true, 
+                    email: true, 
+                    phone_no: true, 
+                    address: true, 
+                    website: true, 
+                    photo: true // Fetch Photo
+                }
             },
             doctor: {
-                select: { full_name: true }
+                select: { 
+                    full_name: true, 
+                    email: true, 
+                    phone_no: true, 
+                    specializations: true, 
+                    photo: true // Fetch Photo
+                }
+            },
+            patient: {
+                select: {
+                    full_name: true,
+                    email: true,
+                    phone_no: true,
+                    photo: true // Fetch Photo for Self entries
+                }
             }
         }
     });
@@ -756,13 +773,16 @@ export const getPatientRecords = async(patientIdentifier: PatientIdentifier, sea
         treatment_undergone: record.treatment_undergone,
         visibility: record.visibility,
         history_of_present_illness: record.history_of_present_illness,
-
         is_hospitalized: record._count.patient_hospitalization_details > 0,
         is_surgery: record._count.patient_surgery_details > 0,
-
         document_count: record._count.patient_documents,
         appointment_date: record.appointment_date,
         reg_no: record.reg_no,
+        
+        // Pass the full objects so the frontend can access photo/email/etc.
+        doctor: record.doctor,
+        hospital: record.hospital,
+        patient: record.patient 
     }));
     return formattedRecords;
 }
