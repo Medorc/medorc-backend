@@ -29,6 +29,7 @@ patientRoute.delete("/records/:record_id/lab-results", authenticateToken, patien
 patientRoute.patch("/records/:record_id/visibility", authenticateToken, patientController.handleUpdatePatientRecordVisibility);
 
 patientRoute.post("/records", authenticateToken, patientController.handleGetPatientRecords);
+patientRoute.post("/records/get", authenticateToken, patientController.handleGetPatientRecords);
 patientRoute.get("/records/:record_id/surgery", authenticateToken, patientController.handleGetPatientSurgeryDetails);
 patientRoute.get("/records/:record_id/hospitalization", authenticateToken, patientController.handleGetPatientHospitalizationDetails);
 patientRoute.get("/records/:record_id/documents", authenticateToken, patientController.handleGetPatientDocuments);
