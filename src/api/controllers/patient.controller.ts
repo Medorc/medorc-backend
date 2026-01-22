@@ -1,6 +1,6 @@
 import * as patientService from "../../services/patient.services.js";
-import {type Request, type Response} from "express";
-import type {EmergencyContact, Lifestyle, PatientIdentifier, SearchOptions} from "../../types/application.js";
+import { type Request, type Response } from "express";
+import type { EmergencyContact, Lifestyle, PatientIdentifier, SearchOptions } from "../../types/application.js";
 
 export const handleGetPatientProfile = async (req: Request, res: Response) => {
     try {
@@ -51,11 +51,11 @@ export const handleGetPatientProfile = async (req: Request, res: Response) => {
                     // Re-extract codes for logging scope
                     const shc_code = typeof req.query.shc_code === 'string' ? req.query.shc_code : undefined;
                     const qr_code = typeof req.query.qr_code === 'string' ? req.query.qr_code : undefined;
-                    
+
                     patientIdentifier = { shc_code, qr_code };
 
                     const logMessage = `${new Date().toISOString()} - ${visitorRole.toUpperCase()} [${visitorId}] visited your profile`;
-                    
+
                     // Fire-and-forget logging
                     await patientService.addPatientDataLog(patientIdentifier, logMessage);
                 }
@@ -75,7 +75,7 @@ export const handleGetPatientProfile = async (req: Request, res: Response) => {
     }
 };
 
-export const handleGetPatientPersonalDetails = async(req: Request, res: Response) => {
+export const handleGetPatientPersonalDetails = async (req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -112,12 +112,12 @@ export const handleGetPatientPersonalDetails = async(req: Request, res: Response
 
         return res.status(200).json({ data: patientPersonalDetails });
     }
-    catch(err){
+    catch (err) {
         res.status(400).json({ error: 'An unexpected error occurred.' });
     }
 }
 
-export const handleGetPatientBasicDetails = async(req: Request, res: Response) => {
+export const handleGetPatientBasicDetails = async (req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -154,12 +154,12 @@ export const handleGetPatientBasicDetails = async(req: Request, res: Response) =
 
         return res.status(200).json({ data: patientBasicDetails });
     }
-    catch(err){
+    catch (err) {
         res.status(400).json({ error: 'An unexpected error occurred.' });
     }
 }
 
-export const handleGetPatientEmergencyContacts = async(req: Request, res: Response) => {
+export const handleGetPatientEmergencyContacts = async (req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -184,8 +184,8 @@ export const handleGetPatientEmergencyContacts = async(req: Request, res: Respon
                 });
             }
 
-            if(shc_code)patientIdentifier.shc_code = shc_code as string ;
-            if(qr_code)patientIdentifier.qr_code = qr_code as string ;
+            if (shc_code) patientIdentifier.shc_code = shc_code as string;
+            if (qr_code) patientIdentifier.qr_code = qr_code as string;
 
         } else {
             return res.status(403).json({ error: "Unauthorized role." });
@@ -193,12 +193,12 @@ export const handleGetPatientEmergencyContacts = async(req: Request, res: Respon
         const patientEmergencyContacts = await patientService.getPatientEmergencyContacts(patientIdentifier);
         return res.status(200).json({ data: patientEmergencyContacts });
     }
-    catch(err){
+    catch (err) {
         res.status(400).json({ error: 'An unexpected error occurred.' });
     }
 }
 
-export const handleGetPatientDataLogs = async(req: Request, res: Response) => {
+export const handleGetPatientDataLogs = async (req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -206,7 +206,7 @@ export const handleGetPatientDataLogs = async(req: Request, res: Response) => {
         }
 
         let patientIdentifier: PatientIdentifier = {};
-            
+
         if (userPayload.role === "patient") {
             // Patient: must have user id in token
             if (!userPayload.id) {
@@ -223,8 +223,8 @@ export const handleGetPatientDataLogs = async(req: Request, res: Response) => {
                 });
             }
 
-            if(shc_code)patientIdentifier.shc_code = shc_code as string ;
-            if(qr_code)patientIdentifier.qr_code = qr_code as string ;
+            if (shc_code) patientIdentifier.shc_code = shc_code as string;
+            if (qr_code) patientIdentifier.qr_code = qr_code as string;
 
         } else {
             return res.status(403).json({ error: "Unauthorized role." });
@@ -232,12 +232,12 @@ export const handleGetPatientDataLogs = async(req: Request, res: Response) => {
         const patientDataLogs = await patientService.getPatientDataLogs(patientIdentifier);
         return res.status(200).json({ data: patientDataLogs });
     }
-    catch(err){
+    catch (err) {
         res.status(400).json({ error: 'An unexpected error occurred.' });
     }
 }
 
-export const handleUpdatePatientVisibility = async(req: Request, res: Response) => {
+export const handleUpdatePatientVisibility = async (req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -248,7 +248,7 @@ export const handleUpdatePatientVisibility = async(req: Request, res: Response) 
 
         let curVisibility = req.body.curVisibility;
 
-        if(curVisibility===null){
+        if (curVisibility === null) {
             res.status(400).json({ error: "Visibility does not exist." });
         }
         if (userPayload.role === "patient") {
@@ -257,19 +257,19 @@ export const handleUpdatePatientVisibility = async(req: Request, res: Response) 
                 return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
-            updatedPatientVisibility = await patientService.updatePatientVisibility(curVisibility,userId);
+            updatedPatientVisibility = await patientService.updatePatientVisibility(curVisibility, userId);
         } else {
             return res.status(403).json({ error: "Unauthorized role." });
         }
 
-        return res.status(200).json({ message:"Visibility updated successfully!",data: updatedPatientVisibility});
+        return res.status(200).json({ message: "Visibility updated successfully!", data: updatedPatientVisibility });
     }
-    catch(err){
+    catch (err) {
         res.status(400).json({ error: "Unable to update patient visibility." });
     }
 }
 
-export const handleUpdatePatientPhoto = async(req: Request, res: Response) => {
+export const handleUpdatePatientPhoto = async (req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -278,7 +278,7 @@ export const handleUpdatePatientPhoto = async(req: Request, res: Response) => {
 
         let updatedPatientPhoto;
         let newPhoto = req.body.newPhoto;
-        if(newPhoto===null){
+        if (newPhoto === null) {
             res.status(400).json({ error: "Photo doesn't provided." });
         }
         if (userPayload.role === "patient") {
@@ -287,19 +287,19 @@ export const handleUpdatePatientPhoto = async(req: Request, res: Response) => {
                 return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
-            updatedPatientPhoto = await patientService.updatePatientPhoto(newPhoto,userId);
+            updatedPatientPhoto = await patientService.updatePatientPhoto(newPhoto, userId);
         } else {
             return res.status(403).json({ error: "Unauthorized role." });
         }
 
-        return res.status(200).json({ message:"Photo updated successfully!",data: updatedPatientPhoto});
+        return res.status(200).json({ message: "Photo updated successfully!", data: updatedPatientPhoto });
     }
-    catch(err){
+    catch (err) {
         res.status(400).json({ error: "Unable to update patient photo." });
     }
 }
 
-export const handleUpdatePatientLifestyle = async(req: Request, res: Response) => {
+export const handleUpdatePatientLifestyle = async (req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
@@ -308,7 +308,7 @@ export const handleUpdatePatientLifestyle = async(req: Request, res: Response) =
 
         let updatedPatientLifestyle;
         let newLifestyle: Lifestyle = req.body.newLifestyle;
-        if(newLifestyle==null){
+        if (newLifestyle == null) {
             res.status(400).json({ error: "Lifestyle doesn't provided correctly or doesn't exists." });
         }
         if (userPayload.role === "patient") {
@@ -317,136 +317,136 @@ export const handleUpdatePatientLifestyle = async(req: Request, res: Response) =
                 return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
-            updatedPatientLifestyle = await patientService.updatePatientLifestyle(newLifestyle,userId);
+            updatedPatientLifestyle = await patientService.updatePatientLifestyle(newLifestyle, userId);
         } else {
             return res.status(403).json({ error: "Unauthorized role." });
         }
-        res.status(200).json({ message:"Lifestyle updated successfully!",data: updatedPatientLifestyle});
+        res.status(200).json({ message: "Lifestyle updated successfully!", data: updatedPatientLifestyle });
     }
-    catch(err){
+    catch (err) {
         res.status(400).json({ error: "Unable to update patient Lifestyle." });
     }
 
 }
 
-export const handleUpdatePatientEmail = async(req: Request, res: Response) => {
+export const handleUpdatePatientEmail = async (req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
-            return res.status(400).json({error: "Invalid token payload."});
+            return res.status(400).json({ error: "Invalid token payload." });
         }
 
         let updatedPatientEmail;
         let newEmail = req.body.newEmail;
         if (newEmail === null) {
-            res.status(400).json({error: "Email not provided."});
+            res.status(400).json({ error: "Email not provided." });
         }
         if (userPayload.role === "patient") {
             // Patient: must have user id in token
             if (!userPayload.id) {
-                return res.status(400).json({error: "User ID missing in token."});
+                return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
             updatedPatientEmail = await patientService.updatePatientEmail(newEmail, userId);
 
         } else {
-            return res.status(403).json({error: "Unauthorized role."});
+            return res.status(403).json({ error: "Unauthorized role." });
         }
-        res.status(200).json({message: "Email updated successfully!", data: updatedPatientEmail});
+        res.status(200).json({ message: "Email updated successfully!", data: updatedPatientEmail });
     }
-    catch(err){
-            res.status(400).json({ error: "Unable to update patient Email." });
-        }
+    catch (err) {
+        res.status(400).json({ error: "Unable to update patient Email." });
+    }
 }
 
-export const handleUpdatePatientPhoneNo = async(req: Request, res: Response) => {
+export const handleUpdatePatientPhoneNo = async (req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
-            return res.status(400).json({error: "Invalid token payload."});
+            return res.status(400).json({ error: "Invalid token payload." });
         }
 
         let updatedPatientPhoneNo;
         let newPhoneNo = req.body.newPhoneNo;
-        if ( newPhoneNo=== null) {
-            res.status(400).json({error: "Phone No. not provided."});
+        if (newPhoneNo === null) {
+            res.status(400).json({ error: "Phone No. not provided." });
         }
         if (userPayload.role === "patient") {
             // Patient: must have user id in token
             if (!userPayload.id) {
-                return res.status(400).json({error: "User ID missing in token."});
+                return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
             updatedPatientPhoneNo = await patientService.updatePatientPhoneNo(newPhoneNo, userId);
 
         } else {
-            return res.status(403).json({error: "Unauthorized role."});
+            return res.status(403).json({ error: "Unauthorized role." });
         }
-        res.status(200).json({message: "Phone No. updated successfully!", data: updatedPatientPhoneNo});
+        res.status(200).json({ message: "Phone No. updated successfully!", data: updatedPatientPhoneNo });
     }
-    catch(err){
+    catch (err) {
         res.status(400).json({ error: "Unable to update patient Phone No." });
     }
 }
 
-export const handleUpdatePatientPassword = async(req: Request, res: Response) => {
+export const handleUpdatePatientPassword = async (req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
-            return res.status(400).json({error: "Invalid token payload."});
+            return res.status(400).json({ error: "Invalid token payload." });
         }
 
         let newPassword = req.body.newPassword;
-        if ( newPassword=== null) {
-            res.status(400).json({error: "Phone No. not provided."});
+        if (newPassword === null) {
+            res.status(400).json({ error: "Phone No. not provided." });
         }
         if (userPayload.role === "patient") {
             // Patient: must have user id in token
             if (!userPayload.id) {
-                return res.status(400).json({error: "User ID missing in token."});
+                return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
             await patientService.updatePatientPassword(newPassword, userId);
 
         } else {
-            return res.status(403).json({error: "Unauthorized role."});
+            return res.status(403).json({ error: "Unauthorized role." });
         }
-        res.status(200).json({message: "Password updated successfully!"});
+        res.status(200).json({ message: "Password updated successfully!" });
     }
-    catch(err){
+    catch (err) {
         res.status(400).json({ error: "Unable to update patient Password" });
     }
 }
 
 
 
-export const handleAddPatientEmergencyContact = async(req: Request, res: Response) => {
+export const handleAddPatientEmergencyContact = async (req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
-            return res.status(400).json({error: "Invalid token payload."});
+            return res.status(400).json({ error: "Invalid token payload." });
         }
 
-        let emergencyContact:EmergencyContact = req.body.newEmergencyContact;
+        let emergencyContact: EmergencyContact = req.body.newEmergencyContact;
         let newEmergencyContact;
         if (!emergencyContact) {
-            
-            res.status(400).json({error: "Emergency contact not provided."});
+
+            res.status(400).json({ error: "Emergency contact not provided." });
         }
         if (userPayload.role === "patient") {
             // Patient: must have user id in token
             if (!userPayload.id) {
-                return res.status(400).json({error: "User ID missing in token."});
+                return res.status(400).json({ error: "User ID missing in token." });
             }
             const userId = String(userPayload.id);
             newEmergencyContact = await patientService.addPatientEmergencyContact(emergencyContact, userId);
 
         } else {
-            return res.status(403).json({error: "Unauthorized role."});
+            return res.status(403).json({ error: "Unauthorized role." });
         }
-        res.status(200).json({message: "Emergency contact added successfully!",data: newEmergencyContact});
+        res.status(200).json({ message: "Emergency contact added successfully!", data: newEmergencyContact });
     }
-    catch(err){
+    catch (err) {
         console.error("Error in addPatientEmergencyContact:", err);
         let errorMessage = 'An unexpected error occurred.';
 
@@ -462,30 +462,30 @@ export const handleAddPatientEmergencyContact = async(req: Request, res: Respons
     }
 }
 
-export const handleDeletePatientEmergencyContact = async(req: Request, res: Response) => {
+export const handleDeletePatientEmergencyContact = async (req: Request, res: Response) => {
     try {
         const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
-            return res.status(400).json({error: "Invalid token payload."});
+            return res.status(400).json({ error: "Invalid token payload." });
         }
 
         const emg_id: string = req.body.emg_id;
         if (!emg_id) {
-            return res.status(400).json({error: "Emergency contact id not provided."});
+            return res.status(400).json({ error: "Emergency contact id not provided." });
         }
 
         if (userPayload.role !== "patient") {
-            return res.status(403).json({error: "Unauthorized role."});
+            return res.status(403).json({ error: "Unauthorized role." });
         }
 
         const userId = String(userPayload.id);
-        const result = await patientService.deletePatientEmergencyContact(userId,emg_id);
+        const result = await patientService.deletePatientEmergencyContact(userId, emg_id);
 
         if (!result) {
-            return res.status(404).json({error: "Emergency contact not found"});
+            return res.status(404).json({ error: "Emergency contact not found" });
         }
 
-        res.status(200).json({message: "Emergency contact deleted successfully!"});
+        res.status(200).json({ message: "Emergency contact deleted successfully!" });
     } catch (err) {
         console.error("Error in deletePatientEmergencyContact:", err);
         res.status(400).json({ error: err instanceof Error ? err.message : "Unable to delete patient Emergency Contact" });
@@ -511,9 +511,9 @@ export const handleCreatePatientRecord = async (req: Request, res: Response) => 
         if (typeof userPayload !== 'object' || !userPayload) {
             return res.status(403).json({ error: 'Invalid token payload.' });
         }
-        
-        let patientIdentifier: PatientIdentifier= {};
-        
+
+        let patientIdentifier: PatientIdentifier = {};
+
         if (userPayload.role === 'patient') {
             if (!('id' in userPayload)) {
                 return res.status(400).json({ error: 'Patient ID missing in token.' });
@@ -529,7 +529,7 @@ export const handleCreatePatientRecord = async (req: Request, res: Response) => 
         } else {
             return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
         }
-        
+
         // Call the service with the correct patient identifier, record data, AND the creator's payload
         const newRecord = await patientService.createPatientRecord(
             patientIdentifier,
@@ -542,19 +542,19 @@ export const handleCreatePatientRecord = async (req: Request, res: Response) => 
             userPayload // This is the required addition
         );
         //--LOGGING CALL
-         try{
+        try {
 
-             const creatorId = (userPayload as any).id;
-             const creatorRole = (userPayload as any).role;
+            const creatorId = (userPayload as any).id;
+            const creatorRole = (userPayload as any).role;
 
-             const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] created a new record [${newRecord.record_id}]]`;
+            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] created a new record [${newRecord.record_id}]]`;
 
-             // Call the logging service (fire-and-forget)
-             await patientService.addPatientDataLog(patientIdentifier, logMessage);
-         }
-         catch(logError){
-             console.error("Failed to add data log:", logError);
-         }
+            // Call the logging service (fire-and-forget)
+            await patientService.addPatientDataLog(patientIdentifier, logMessage);
+        }
+        catch (logError) {
+            console.error("Failed to add data log:", logError);
+        }
         return res.status(201).json({
             message: 'Record created successfully.',
             data: { record_id: newRecord.record_id }
@@ -569,23 +569,23 @@ export const handleCreatePatientRecord = async (req: Request, res: Response) => 
 };
 
 export const handleAddPatientHospitalizationDetails = async (req: Request, res: Response) => {
-    try{
+    try {
         const userPayload = req.user;
         const hospitalizationDetails = req.body.hospitalizationDetails;
         const record_id = req.params.record_id;
-        if(!hospitalizationDetails) {
+        if (!hospitalizationDetails) {
             res.status(400).json({ error: 'Hospitalization details & record_id is required.' });
         }
-        if(!record_id){
-            res.status(400).json({error:"Record id must be provided."});
+        if (!record_id) {
+            res.status(400).json({ error: "Record id must be provided." });
         }
         if (typeof userPayload !== 'object' || !userPayload) {
             return res.status(403).json({ error: 'Invalid token payload.' });
         }
         const newHospitalizationDetails = await patientService.addPatientHospitalizationDetails(record_id!, hospitalizationDetails);
         //--LOGGING CALL
-        try{
-            let patientIdentifier: PatientIdentifier= {};
+        try {
+            let patientIdentifier: PatientIdentifier = {};
             const shc_code = req.body.shc_code;
             const qr_code = req.body.qr_code;
             if (userPayload.role === 'patient') {
@@ -612,12 +612,12 @@ export const handleAddPatientHospitalizationDetails = async (req: Request, res: 
             // Call the logging service (fire-and-forget)
             await patientService.addPatientDataLog(patientIdentifier, logMessage);
         }
-        catch(logError){
+        catch (logError) {
             console.error("Failed to add data log:", logError);
         }
-        return res.status(201).json({message: 'Hospitalization details added successfully.', data: newHospitalizationDetails});
+        return res.status(201).json({ message: 'Hospitalization details added successfully.', data: newHospitalizationDetails });
     }
-    catch(error){
+    catch (error) {
         if (error instanceof Error) {
             return res.status(500).json({ error: error.message });
         }
@@ -626,11 +626,11 @@ export const handleAddPatientHospitalizationDetails = async (req: Request, res: 
 }
 
 export const handleAddPatientSurgeryDetails = async (req: Request, res: Response) => {
-    try{
+    try {
         const userPayload = req.user;
         const surgeryDetails = req.body.surgeryDetails;
         const record_id = req.params.record_id;
-        if(!surgeryDetails || !record_id) {
+        if (!surgeryDetails || !record_id) {
             return res.status(400).json({ error: 'SurgeryDetails & record_id must be provided.' });
         }
         if (typeof userPayload !== 'object' || !userPayload) {
@@ -638,8 +638,8 @@ export const handleAddPatientSurgeryDetails = async (req: Request, res: Response
         }
         const newSurgeryDetails = await patientService.addPatientSurgeryDetails(record_id!, surgeryDetails);
         //LOGGING CALL
-        try{
-            let patientIdentifier: PatientIdentifier= {};
+        try {
+            let patientIdentifier: PatientIdentifier = {};
             const shc_code = req.body.shc_code;
             const qr_code = req.body.qr_code;
             if (userPayload.role === 'patient') {
@@ -666,12 +666,12 @@ export const handleAddPatientSurgeryDetails = async (req: Request, res: Response
             // Call the logging service (fire-and-forget)
             await patientService.addPatientDataLog(patientIdentifier, logMessage);
         }
-        catch(logError){
+        catch (logError) {
             console.error("Failed to add data log:", logError);
-        }     
-        return res.status(201).json({message: 'Surgery Details added successfully.', data: newSurgeryDetails});
+        }
+        return res.status(201).json({ message: 'Surgery Details added successfully.', data: newSurgeryDetails });
     }
-    catch(error){
+    catch (error) {
         if (error instanceof Error) {
             return res.status(500).json({ error: error.message });
         }
@@ -680,12 +680,12 @@ export const handleAddPatientSurgeryDetails = async (req: Request, res: Response
 }
 
 export const handleAddPatientPrescription = async (req: Request, res: Response) => {
-    try{
+    try {
         const userPayload = req.user;
         const record_id = req.params.record_id;
-        const {prescription_url, shc_code,qr_code} = req.body;
+        const { prescription_url, shc_code, qr_code } = req.body;
 
-        if(!prescription_url) {
+        if (!prescription_url) {
             return res.status(400).json({ error: 'Prescription url & record_id must be provided.' });
         }
         if (typeof userPayload !== 'object' || !userPayload) {
@@ -693,8 +693,8 @@ export const handleAddPatientPrescription = async (req: Request, res: Response) 
         }
         const newDocument = await patientService.addPatientPrescription(record_id!, prescription_url);
         //LOGGING CALL
-        try{
-            let patientIdentifier: PatientIdentifier= {};
+        try {
+            let patientIdentifier: PatientIdentifier = {};
             if (userPayload.role === 'patient') {
                 if (!('id' in userPayload)) {
                     return res.status(400).json({ error: 'Patient ID missing in token.' });
@@ -719,11 +719,11 @@ export const handleAddPatientPrescription = async (req: Request, res: Response) 
             // Call the logging service (fire-and-forget)
             await patientService.addPatientDataLog(patientIdentifier, logMessage);
         }
-        catch(logError){
+        catch (logError) {
             console.error("Failed to add prescription", logError);
         }
-        return res.status(201).json({message: 'Prescription added successfully.', data: newDocument});
-    }catch(error){
+        return res.status(201).json({ message: 'Prescription added successfully.', data: newDocument });
+    } catch (error) {
         if (error instanceof Error) {
             return res.status(500).json({ error: error.message });
         }
@@ -735,14 +735,14 @@ export const handleRemovePatientPrescription = async (req: Request, res: Respons
     try {
         const userPayload = req.user;
         const record_id = req.params.record_id;
-        const {shc_code,qr_code} = req.body;
+        const { shc_code, qr_code } = req.body;
         if (typeof userPayload !== 'object' || !userPayload) {
             return res.status(403).json({ error: 'Invalid token payload.' });
         }
         const updatedDoc = await patientService.removePatientPrescription(record_id!);
         //LOGGING CALL
-        try{
-            let patientIdentifier: PatientIdentifier= {};
+        try {
+            let patientIdentifier: PatientIdentifier = {};
             if (userPayload.role === 'patient') {
                 if (!('id' in userPayload)) {
                     return res.status(400).json({ error: 'Patient ID missing in token.' });
@@ -767,11 +767,11 @@ export const handleRemovePatientPrescription = async (req: Request, res: Respons
             // Call the logging service (fire-and-forget)
             await patientService.addPatientDataLog(patientIdentifier, logMessage);
         }
-        catch(logError){
+        catch (logError) {
             console.error("Failed to prescription", logError);
         }
-        return res.status(201).json({message: 'Prescription removed successfully.', data: updatedDoc});
-    }catch(error){
+        return res.status(201).json({ message: 'Prescription removed successfully.', data: updatedDoc });
+    } catch (error) {
         if (error instanceof Error) {
             return res.status(500).json({ error: error.message });
         }
@@ -780,12 +780,12 @@ export const handleRemovePatientPrescription = async (req: Request, res: Respons
 }
 
 export const handleAddPatientLabResults = async (req: Request, res: Response) => {
-    try{
+    try {
         const userPayload = req.user;
         const record_id = req.params.record_id;
-        const {lab_results_url, shc_code,qr_code} = req.body;
+        const { lab_results_url, shc_code, qr_code } = req.body;
 
-        if(!lab_results_url) {
+        if (!lab_results_url) {
             return res.status(400).json({ error: 'Lab results url & record_id must be provided.' });
         }
         if (typeof userPayload !== 'object' || !userPayload) {
@@ -793,8 +793,8 @@ export const handleAddPatientLabResults = async (req: Request, res: Response) =>
         }
         const newDocument = await patientService.addPatientLabResults(record_id!, lab_results_url);
         //LOGGING CALL
-        try{
-            let patientIdentifier: PatientIdentifier= {};
+        try {
+            let patientIdentifier: PatientIdentifier = {};
             if (userPayload.role === 'patient') {
                 if (!('id' in userPayload)) {
                     return res.status(400).json({ error: 'Patient ID missing in token.' });
@@ -819,11 +819,11 @@ export const handleAddPatientLabResults = async (req: Request, res: Response) =>
             // Call the logging service (fire-and-forget)
             await patientService.addPatientDataLog(patientIdentifier, logMessage);
         }
-        catch(logError){
+        catch (logError) {
             console.error("Failed to add lab results", logError);
         }
-        return res.status(201).json({message: 'Lab results added successfully.', data: newDocument});
-    }catch(error){
+        return res.status(201).json({ message: 'Lab results added successfully.', data: newDocument });
+    } catch (error) {
         if (error instanceof Error) {
             return res.status(500).json({ error: error.message });
         }
@@ -835,14 +835,14 @@ export const handleRemovePatientLabResults = async (req: Request, res: Response)
     try {
         const userPayload = req.user;
         const record_id = req.params.record_id;
-        const {shc_code,qr_code} = req.body;
+        const { shc_code, qr_code } = req.body;
         if (typeof userPayload !== 'object' || !userPayload) {
             return res.status(403).json({ error: 'Invalid token payload.' });
         }
         const updatedDoc = await patientService.removePatientLabResults(record_id!);
         //LOGGING CALL
-        try{
-            let patientIdentifier: PatientIdentifier= {};
+        try {
+            let patientIdentifier: PatientIdentifier = {};
             if (userPayload.role === 'patient') {
                 if (!('id' in userPayload)) {
                     return res.status(400).json({ error: 'Patient ID missing in token.' });
@@ -867,11 +867,11 @@ export const handleRemovePatientLabResults = async (req: Request, res: Response)
             // Call the logging service (fire-and-forget)
             await patientService.addPatientDataLog(patientIdentifier, logMessage);
         }
-        catch(logError){
+        catch (logError) {
             console.error("Failed to prescription", logError);
         }
-        return res.status(201).json({message: 'Lab results removed successfully.', data: updatedDoc});
-    }catch(error){
+        return res.status(201).json({ message: 'Lab results removed successfully.', data: updatedDoc });
+    } catch (error) {
         if (error instanceof Error) {
             return res.status(500).json({ error: error.message });
         }
@@ -883,13 +883,13 @@ export const handleUpdatePatientRecordVisibility = async (req: Request, res: Res
     try {
         const curVisibility = req.body.curVisibility;
         const record_id = req.params.record_id;
-        if(!record_id || curVisibility==null) {
+        if (!record_id || curVisibility == null) {
             return res.status(403).json({ error: 'CurVisibility & record_id must be provided.' });
         }
         const result = await patientService.updatePatientRecordVisibility(record_id, curVisibility);
-        res.status(200).json({message:"visibility updated successfully.", data: result});
+        res.status(200).json({ message: "visibility updated successfully.", data: result });
     }
-    catch(error){
+    catch (error) {
         if (error instanceof Error) {
             return res.status(500).json({ error: error.message });
         }
@@ -899,7 +899,7 @@ export const handleUpdatePatientRecordVisibility = async (req: Request, res: Res
 }
 
 export const handleGetPatientRecords = async (req: Request, res: Response) => {
-    try{
+    try {
         const userPayload = req.user;
         const searchOptions: SearchOptions = req.body.searchOptions;
         const shc_code = req.body.shc_code;
@@ -908,7 +908,7 @@ export const handleGetPatientRecords = async (req: Request, res: Response) => {
         if (typeof userPayload !== 'object' || !userPayload) {
             return res.status(403).json({ error: 'Invalid token payload.' });
         }
-        let patientIdentifier: PatientIdentifier= {};
+        let patientIdentifier: PatientIdentifier = {};
         if (userPayload.role === 'patient') {
             if (!('id' in userPayload)) {
                 return res.status(400).json({ error: 'Patient ID missing in token.' });
@@ -925,9 +925,9 @@ export const handleGetPatientRecords = async (req: Request, res: Response) => {
             return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
         }
         const records = await patientService.getPatientRecords(patientIdentifier, searchOptions, userPayload.role, searchQuery);
-        res.status(200).json({message: 'Records retrived successfully .', data: records});
+        res.status(200).json({ message: 'Records retrived successfully .', data: records });
     }
-    catch(error){
+    catch (error) {
         if (error instanceof Error) {
             return res.status(500).json({ error: error.message });
         }
@@ -936,9 +936,9 @@ export const handleGetPatientRecords = async (req: Request, res: Response) => {
 }
 
 export const handleGetPatientSurgeryDetails = async (req: Request, res: Response) => {
-    try{
+    try {
         const record_id = req.params.record_id;
-        if(!record_id){
+        if (!record_id) {
             return res.status(403).json({ error: 'record Id must be provided' });
         }
         const surgeryDetails = await patientService.getPatientSurgeryDetails(record_id);
@@ -947,7 +947,7 @@ export const handleGetPatientSurgeryDetails = async (req: Request, res: Response
         }
         res.status(200).json(surgeryDetails);
     }
-    catch(error){
+    catch (error) {
         if (error instanceof Error) {
             return res.status(500).json({ error: error.message });
         }
@@ -956,9 +956,9 @@ export const handleGetPatientSurgeryDetails = async (req: Request, res: Response
 }
 
 export const handleGetPatientHospitalizationDetails = async (req: Request, res: Response) => {
-    try{
+    try {
         const record_id = req.params.record_id;
-        if(!record_id){
+        if (!record_id) {
             return res.status(403).json({ error: 'record Id must be provided' });
         }
         const hospitalizationDetails = await patientService.getPatientHospitalizationDetails(record_id);
@@ -967,7 +967,7 @@ export const handleGetPatientHospitalizationDetails = async (req: Request, res: 
         }
         res.status(200).json(hospitalizationDetails);
     }
-    catch(error){
+    catch (error) {
         if (error instanceof Error) {
             return res.status(500).json({ error: error.message });
         }
@@ -976,9 +976,9 @@ export const handleGetPatientHospitalizationDetails = async (req: Request, res: 
 }
 
 export const handleGetPatientDocuments = async (req: Request, res: Response) => {
-    try{
+    try {
         const record_id = req.params.record_id;
-        if(!record_id){
+        if (!record_id) {
             return res.status(403).json({ error: 'record Id must be provided' });
         }
         const documents = await patientService.getPatientDocuments(record_id);
@@ -987,7 +987,7 @@ export const handleGetPatientDocuments = async (req: Request, res: Response) => 
         }
         res.status(200).json(documents);
     }
-    catch(error){
+    catch (error) {
         if (error instanceof Error) {
             return res.status(500).json({ error: error.message });
         }
