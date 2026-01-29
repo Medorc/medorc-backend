@@ -110,6 +110,7 @@ export const getPatientBasicDetails = async (patient_id?: string, shc_code?: str
         where: whereClause,
         // Select only the fields you want to return
         select: {
+            full_name: true,
             email: true,
             phone_no: true,
             photo: true
