@@ -48,6 +48,9 @@ export const getDoctorProfile = async(doctor_id:string)=>{
             photo:true,
             hospital_affiliation:true,
             address:true,
+            years_of_experience:true,
+            specializations:true,
+
         }
     });
     if(!doctorProfile){
@@ -90,6 +93,9 @@ export const getDoctorBasicDetails = async(doctor_id:string)=>{
             photo:true,
             email:true,
             phone_no:true,
+            specializations:true,
+            years_of_experience:true,
+            full_name:true,
         }
     });
     if(!doctorBasicDetails){
