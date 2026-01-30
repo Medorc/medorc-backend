@@ -75,6 +75,7 @@ export const getExternPersonalDetails = async(viewer_id:string)=>{
             date_of_birth:true,
             gender:true,
             org_address:true,
+            photo:true,
         }
     });
     if(!externPersonalDetails){
@@ -123,6 +124,7 @@ export const getExternBasicDetails = async(viewer_id:string)=>{
             email:true,
             phone_no:true,
             photo:true,
+            full_name:true,
 
         }
     });
