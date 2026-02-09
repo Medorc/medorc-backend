@@ -367,7 +367,7 @@ export const handleUpdatePatientPhoneNo = async (req: Request, res: Response) =>
         }
 
         let updatedPatientPhoneNo;
-        let newPhoneNo = req.body.newPhoneNo;
+        let newPhoneNo = req.body.newPhone;
         if (newPhoneNo === null) {
             res.status(400).json({ error: "Phone No. not provided." });
         }
@@ -503,7 +503,7 @@ export const handleCreatePatientRecord = async (req: Request, res: Response) => 
             shc_code, // Doctor/Hospital will provide this in the body
             qr_code   // Or this
         } = req.body;
-
+        console.log(req.user);
         if (!basicDetails) {
             return res.status(400).json({ error: 'basicDetails are required.' });
         }
