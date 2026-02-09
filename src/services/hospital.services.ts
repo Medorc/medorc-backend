@@ -53,6 +53,29 @@ export const getHospitalProfile = async(hospital_id:string)=>{
     return hospitalProfile;
 }
 
+export const getHospitalDetails = async(hospital_id:string)=>{
+    if(!hospital_id){
+        throw new Error("Hospital id were not received properly");
+    }
+
+    const hospitalDetails = await prisma.hospitals.findUnique({
+        where: {hospital_id: hospital_id},
+        // Select only the fields you want to return
+        select: {
+            email:true,
+            name:true,
+            photo:true,
+            address:true,
+            phone_no:true,
+        }
+    });
+    if(!hospitalDetails){
+        console.log("User not found");
+        throw new Error("User not found");
+    }
+    return hospitalDetails;
+}
+
 export const getHospitalProfileCredentials = async(hospital_id:string)=>{
     if(!hospital_id){
         throw new Error("Hospital id were not received properly");

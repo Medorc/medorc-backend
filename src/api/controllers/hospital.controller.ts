@@ -35,6 +35,40 @@ export const handleGetHospitalProfile = async (req: Request, res: Response) => {
     }
 }
 
+export const handleGetHospitalDetails = async (req: Request, res: Response) => {
+    try{
+        console.log(req.user);
+        const userPayload = req.user;
+        if (!userPayload || typeof userPayload !== "object") {
+            return res.status(400).json({ error: "Invalid token payload." });
+        }
+
+        let hospitalDetails;
+        if(userPayload.role =="hospital"){
+            if (!userPayload.id) {
+                return res.status(400).json({ error: "User ID missing in token." });
+            }
+            const userId = String(userPayload.id);
+            hospitalDetails = await hospitalService.getHospitalDetails(userId);
+        }
+        else if(["patient", "doctor", "extern"].includes(userPayload.role)){
+            const userId = req.body.hospital_id;
+            if(!userId){return res.status(400).json({ error: "Hospital id must be provided" });}
+            hospitalDetails = await hospitalService.getHospitalDetails(userId);
+        }
+        else{
+            return res.status(403).json({ error: "Unauthorized role." });
+        }
+        res.status(200).json({message:"Hospital details retrieved successfully",data:hospitalDetails});
+    }
+    catch(error){
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while retriving details .' });
+    }
+}
+
 export const handleGetHospitalProfileCredentials = async (req: Request, res: Response) => {
     try{
         const userPayload = req.user;

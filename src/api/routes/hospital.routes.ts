@@ -5,6 +5,7 @@ import * as hospitalController from "../controllers/hospital.controller.js";
 const hospitalRoute = Router();
 
 hospitalRoute.get("/profile",authenticateToken,hospitalController.handleGetHospitalProfile);
+hospitalRoute.get("/details",authenticateToken,hospitalController.handleGetHospitalDetails);
 hospitalRoute.get("/profile/credentials",authenticateToken,hospitalController.handleGetHospitalProfileCredentials);
 hospitalRoute.patch("/profile/credentials",authenticateToken,hospitalController.handleUpdateHospitalProfileCredentials);
 hospitalRoute.patch("/profile/documents",authenticateToken,hospitalController.handleUpdateHospitalVerificationDocuments);
