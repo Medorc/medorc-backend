@@ -8,6 +8,7 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
 
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
+    
     if (token == null) {
         // 401 Unauthorized: The client did not send a token.
         return res.status(401).json({ error: 'Authentication token required.' });

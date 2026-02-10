@@ -6,6 +6,7 @@ import type {DoctorProfileCredentials} from "../../types/application.js";
 export const handleGetDoctorProfile = async (req: Request, res: Response) => {
     try{
         const userPayload = req.user;
+        console.log("User Payload: ",req.user);
         if (!userPayload || typeof userPayload !== "object") {
             return res.status(400).json({ error: "Invalid token payload." });
         }
@@ -18,9 +19,9 @@ export const handleGetDoctorProfile = async (req: Request, res: Response) => {
             doctorProfile = await doctorService.getDoctorProfile(userId);
         }
         else if(["patient", "hospital", "extern"].includes(userPayload.role)){
-            const userId = req.body.doctor_id;
+            const userId = req.query.viewer_id;
             if(!userId){return res.status(400).json({ error: "Doctor id must be provided" });}
-            doctorProfile = await doctorService.getDoctorProfile(userId);
+            doctorProfile = await doctorService.getDoctorProfile(String(userId));
         }
         else{
             return res.status(403).json({ error: "Unauthorized role." });
@@ -95,7 +96,8 @@ export const handleGetDoctorBasicDetails = async (req: Request, res: Response) =
 
 export const handleUpdateDoctorProfileCredentials = async (req: Request, res: Response) => {
     try{
-        const userPayload = req.user;
+        console.log("User Payload: ",req.body);
+        const userPayload = req.body;
         if (!userPayload || typeof userPayload !== "object") {
             return res.status(400).json({ error: "Invalid token payload." });
         }

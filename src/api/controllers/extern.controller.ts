@@ -19,9 +19,9 @@ export const handleGetExternProfile = async (req: Request, res: Response) => {
             externProfile = await externService.getExternProfile(userId);
         }
         else if(["doctor", "hospital", "patient"].includes(userPayload.role)){
-            const userId = req.body.viewer_id;
+            const userId = req.query.viewer_id;
             if(!userId){return res.status(400).json({ error: "Viewer id must be provided" });}
-            externProfile = await externService.getExternProfile(userId);
+            externProfile = await externService.getExternProfile(String(userId));
         }
         else{
             return res.status(403).json({ error: "Unauthorized role." });

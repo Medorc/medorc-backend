@@ -18,9 +18,9 @@ export const handleGetHospitalProfile = async (req: Request, res: Response) => {
             hospitalProfile = await hospitalService.getHospitalProfile(userId);
         }
         else if(["patient", "doctor", "extern"].includes(userPayload.role)){
-            const userId = req.body.hospital_id;
+            const userId = req.query.viewer_id;
             if(!userId){return res.status(400).json({ error: "Doctor id must be provided" });}
-            hospitalProfile = await hospitalService.getHospitalProfile(userId);
+            hospitalProfile = await hospitalService.getHospitalProfile(String(userId));
         }
         else{
             return res.status(403).json({ error: "Unauthorized role." });
