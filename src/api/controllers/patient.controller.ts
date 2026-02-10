@@ -503,6 +503,7 @@ export const handleCreatePatientRecord = async (req: Request, res: Response) => 
             shc_code, // Doctor/Hospital will provide this in the body
             qr_code   // Or this
         } = req.body;
+        console.log(req.body);
         console.log(req.user);
         if (!basicDetails) {
             return res.status(400).json({ error: 'basicDetails are required.' });

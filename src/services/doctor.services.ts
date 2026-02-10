@@ -69,9 +69,10 @@ export const getDoctorProfileCredentials = async(doctor_id:string)=>{
         where: {doctor_id: doctor_id},
         // Select only the fields you want to return
         select: {
-           license_no:true,
+            license_no:true,
             years_of_experience:true,
             specializations:true,
+            hospital_affiliation:true,
             verification_documents:true
         }
     });
@@ -118,7 +119,7 @@ export const updateDoctorProfileCredentials = async(doctor_id:string, newCredent
             license_no:true,
             years_of_experience:true,
             specializations:true,
-            hospital_affiliation:true
+            hospital_affiliation:true,
         }
     });
     if(!updatedCredentials){
