@@ -135,6 +135,7 @@ export const handleGetExternBasicDetails = async (req: Request, res: Response) =
 export const handleUpdateExternOrganizationCredentials = async (req: Request, res: Response) => {
     try{
         const userPayload = req.user;
+        console.log(req.body);
         if (!userPayload || typeof userPayload !== "object") {
             return res.status(400).json({ error: "Invalid token payload." });
         }

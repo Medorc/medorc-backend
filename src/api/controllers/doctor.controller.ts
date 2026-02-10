@@ -96,8 +96,7 @@ export const handleGetDoctorBasicDetails = async (req: Request, res: Response) =
 
 export const handleUpdateDoctorProfileCredentials = async (req: Request, res: Response) => {
     try{
-        console.log("User Payload: ",req.body);
-        const userPayload = req.body;
+        const userPayload = req.user;
         if (!userPayload || typeof userPayload !== "object") {
             return res.status(400).json({ error: "Invalid token payload." });
         }
