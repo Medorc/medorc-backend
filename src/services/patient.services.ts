@@ -726,6 +726,7 @@ export const getPatientRecords = async (patientIdentifier: PatientIdentifier, se
         where: recordsWhereClause,
         orderBy: orderByClause,
         include: {
+            patient_documents: true,
             _count: {
                 select: {
                     patient_documents: true,
@@ -759,7 +760,7 @@ export const getPatientRecords = async (patientIdentifier: PatientIdentifier, se
                     phone_no: true,
                     photo: true // Fetch Photo for Self entries
                 }
-            }
+            },
         }
     });
 
@@ -778,7 +779,9 @@ export const getPatientRecords = async (patientIdentifier: PatientIdentifier, se
         history_of_present_illness: record.history_of_present_illness,
         is_hospitalized: record._count.patient_hospitalization_details > 0,
         is_surgery: record._count.patient_surgery_details > 0,
-        document_count: record._count.patient_documents,
+        document_count:
+            (record.patient_documents?.[0]?.prescriptions ? 1 : 0) +
+            (record.patient_documents?.[0]?.lab_results ? 1 : 0),
         appointment_date: record.appointment_date,
         reg_no: record.reg_no,
 
