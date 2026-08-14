@@ -56,11 +56,12 @@ export const getPatientProfile = async (patient_id?: string, shc_code?: string, 
 
     const patientProfile = await prisma.patients.findUnique({
         where: whereClause,
-        // Select only the fields you want to return
         select: {
             full_name: true,
             email: true,
             date_of_birth: true,
+            gender: true,
+            blood_group: true,
             phone_no: true,
             visibility: true,
             shc_code: true,
@@ -80,12 +81,12 @@ export const getPatientPersonalDetails = async (patient_id?: string, shc_code?: 
 
     const patientPersonalDetails = await prisma.patients.findUnique({
         where: whereClause,
-        // Select only the fields you want to return
         select: {
             full_name: true,
             photo: true,
             date_of_birth: true,
             gender: true,
+            blood_group: true,
             address: true,
             smoking: true,
             alcoholism: true,
@@ -269,6 +270,37 @@ export const updatePatientLifestyle = async (newLifestyle: Lifestyle, patient_id
     }
 
 }
+
+export const updatePatientPersonalDetails = async (newPersonalDetails: Partial<PatientDetails>, patient_id: string) => {
+    if (!patient_id) {
+        throw new Error("An identifier (patient_id) must be provided.");
+    }
+    const updateData: any = {};
+    if (newPersonalDetails.full_name !== undefined) updateData.full_name = newPersonalDetails.full_name;
+    if (newPersonalDetails.gender !== undefined) updateData.gender = newPersonalDetails.gender;
+    if (newPersonalDetails.blood_group !== undefined) updateData.blood_group = newPersonalDetails.blood_group;
+    if (newPersonalDetails.date_of_birth !== undefined) updateData.date_of_birth = new Date(newPersonalDetails.date_of_birth);
+    if (newPersonalDetails.address !== undefined) updateData.address = newPersonalDetails.address;
+    if (newPersonalDetails.photo !== undefined) updateData.photo = newPersonalDetails.photo;
+
+    const updatedPersonal = await prisma.patients.update({
+        where: { patient_id },
+        data: updateData,
+        select: {
+            full_name: true,
+            gender: true,
+            blood_group: true,
+            date_of_birth: true,
+            address: true,
+            photo: true
+        }
+    });
+
+    if (!updatedPersonal) {
+        throw new Error("User not found");
+    }
+    return updatedPersonal;
+};
 
 export const updatePatientEmail = async (newEmail: string, patient_id: string) => {
 

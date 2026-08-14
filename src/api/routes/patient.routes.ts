@@ -11,7 +11,7 @@ patientRoute.get("/profile/data-logs", authenticateToken, patientController.hand
 
 patientRoute.patch("/profile/shc-visibility", authenticateToken, patientController.handleUpdatePatientVisibility);
 patientRoute.patch("/profile/photo", authenticateToken, patientController.handleUpdatePatientPhoto);
-patientRoute.patch("/profile/personal", authenticateToken, patientController.handleGetPatientBasicDetails);
+patientRoute.patch("/profile/personal", authenticateToken, patientController.handleUpdatePatientPersonalDetails);
 patientRoute.patch("/profile/lifestyle", authenticateToken, patientController.handleUpdatePatientLifestyle);
 patientRoute.patch("/profile/email", authenticateToken, patientController.handleUpdatePatientEmail);
 patientRoute.patch("/profile/phone", authenticateToken, patientController.handleUpdatePatientPhoneNo);

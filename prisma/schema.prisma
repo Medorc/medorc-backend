@@ -29,6 +29,7 @@ model patients {
   visibility                 Boolean?                       @default(false)
   full_name                  String?                        @db.VarChar(50)
   gender                     String?                        @db.VarChar(10)
+  blood_group                String?                        @db.VarChar(10)
   photo                      String?                        @db.Text
   date_of_birth              DateTime?                      @db.Date
   address                    String?                        @db.Text

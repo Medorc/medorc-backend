@@ -325,9 +325,29 @@ export const handleUpdatePatientLifestyle = async (req: Request, res: Response) 
     }
     catch (err) {
         res.status(400).json({ error: "Unable to update patient Lifestyle." });
-    }
-
 }
+
+export const handleUpdatePatientPersonalDetails = async (req: Request, res: Response) => {
+    try {
+        const userPayload = req.user;
+        if (!userPayload || typeof userPayload !== "object") {
+            return res.status(400).json({ error: "Invalid token payload." });
+        }
+
+        if (userPayload.role !== "patient" || !userPayload.id) {
+            return res.status(403).json({ error: "Unauthorized role or missing ID." });
+        }
+
+        const userId = String(userPayload.id);
+        const newPersonalDetails = req.body.newPersonalDetails || req.body;
+
+        const updatedPersonal = await patientService.updatePatientPersonalDetails(newPersonalDetails, userId);
+        return res.status(200).json({ message: "Personal details updated successfully!", data: updatedPersonal });
+    } catch (err) {
+        console.error(err);
+        return res.status(400).json({ error: "Unable to update patient personal details." });
+    }
+};
 
 export const handleUpdatePatientEmail = async (req: Request, res: Response) => {
     try {

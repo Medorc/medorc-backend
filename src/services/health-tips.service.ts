@@ -1,31 +1,33 @@
 import { PrismaClient } from "@prisma/client";
 
+const prisma = new PrismaClient();
+
 export const getRandom = async () => {
-    const prisma = new PrismaClient();
     const tipCount = await prisma.health_tips.count();
 
+    const fallbackTips = [
+        { category: "Hydration", tip_text: "Drink at least 2.5–3 liters of water daily to maintain optimal bodily functions and energy." },
+        { category: "Activity", tip_text: "Aim for 30 minutes of moderate activity, like brisk walking, every day." },
+        { category: "Sleep", tip_text: "Maintain a consistent sleep routine with 7–8 hours of rest each night for cellular recovery." },
+        { category: "Nutrition", tip_text: "Incorporate fiber-rich foods like whole grains, nuts, and berries into your daily diet." },
+        { category: "Mental Health", tip_text: "Take 5-minute mindfulness pauses during work to reduce cortisol and mental fatigue." },
+        { category: "Eye Care", tip_text: "Follow the 20-20-20 rule: Every 20 minutes, look at an object 20 feet away for 20 seconds." },
+        { category: "Posture", tip_text: "Ensure your computer monitor is at eye level to reduce strain on your neck and spine." },
+        { category: "Immunity", tip_text: "Eat foods rich in Vitamin C and Zinc, such as citrus fruits, spinach, and seeds." },
+        { category: "Heart Health", tip_text: "Limit processed sodium and opt for heart-healthy fats like olive oil and avocados." },
+        { category: "Skin Care", tip_text: "Apply broad-spectrum sunscreen daily to protect your skin against UV radiation." },
+        { category: "Medication Adherence", tip_text: "Set daily alarms or use a pill organizer to ensure you never miss prescribed medications." },
+        { category: "Preventive Care", tip_text: "Schedule annual health checkups and blood screenings for early disease detection." },
+        { category: "Hygiene", tip_text: "Wash your hands thoroughly with soap for 20 seconds before meals and after outdoor visits." },
+        { category: "Stress Management", tip_text: "Engage in hobbies or spend time in nature to naturally relieve stress and elevate mood." },
+        { category: "Oral Health", tip_text: "Brush twice daily and floss once daily to prevent gum disease and maintain systemic health." }
+    ];
+
     if (tipCount === 0) {
-        const fallbackTips = [
-            { category: "Hydration", tip_text: "Drink at least 3 liters of water today to verify hydration levels." },
-            { category: "Activity", tip_text: "Take a 15-minute walk after meals to improve digestion." },
-            { category: "Sleep", tip_text: "Avoid screens 1 hour before bed for better sleep quality." },
-            { category: "Nutrition", tip_text: "Include protein in your breakfast to improved satiety throughout the day." },
-            { category: "Mental Health", tip_text: "Practice deep breathing for 5 minutes when feeling stressed." },
-            { category: "Eye Care", tip_text: "Follow the 20-20-20 rule: Every 20 mins, look at something 20 feet away for 20 secs." },
-            { category: "Posture", tip_text: "Sit up straight! Good posture prevents back pain and boosts confidence." },
-            { category: "Immunity", tip_text: "Eat more citrus fruits to boost your Vitamin C intake." },
-            { category: "Focus", tip_text: "Take short breaks every hour to maintain high productivity." },
-            { category: "Heart Health", tip_text: "Reduce salt intake to maintain healthy blood pressure levels." },
-            { category: "Skin Care", tip_text: "Wear sunscreen daily, even when indoors, to protect against UV rays." },
-            { category: "Wellness", tip_text: "Laugh more! It lowers stress hormones and strengthens your immune system." },
-            { category: "Diet", tip_text: "Eat a rainbow of vegetables to get a wide range of nutrients." },
-            { category: "Hygiene", tip_text: "Wash your hands frequently to prevent the spread of infections." },
-            { category: "Mindfulness", tip_text: "Spend 5 minutes meditating today to clear your mind." }
-        ];
         return fallbackTips[Math.floor(Math.random() * fallbackTips.length)];
     }
 
     const randomIndex = Math.floor(Math.random() * tipCount);
-    const health_tip = await prisma.health_tips.findFirst({ skip: randomIndex, });
-    return health_tip;
-}
+    const health_tip = await prisma.health_tips.findFirst({ skip: randomIndex });
+    return health_tip || fallbackTips[Math.floor(Math.random() * fallbackTips.length)];
+};

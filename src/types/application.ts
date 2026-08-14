@@ -16,6 +16,7 @@ export interface PatientDetails {
     phone_no: string,
     photo: string,
     gender: string,
+    blood_group?: string,
     email: string,
     password: string,
     address: string,
