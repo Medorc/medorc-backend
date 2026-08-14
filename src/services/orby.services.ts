@@ -137,14 +137,14 @@ export const findPatientLastActivity = findPatientLastRecord;
 
 export const checkPatientAllergy = async (shc_code?: string, qr_code?: string): Promise<string> => {
     const patientId = await getPatientId(shc_code, qr_code);
-    if (!patientId) return "Patient not found.";
+    if (!patientId) return "I couldn't find a registered patient matching your account or SHC Code. Please make sure you are logged in or provide your SHC Code.";
 
     const patient = await prisma.patients.findUnique({
         where: { patient_id: patientId },
         select: { allergy: true }
     });
 
-    if (!patient) return "Patient not found.";
+    if (!patient) return "I couldn't find a registered patient matching your account or SHC Code.";
 
     if (patient.allergy && patient.allergy.trim() !== "") {
         return `The patient has a recorded allergy to: ${patient.allergy}.`;
