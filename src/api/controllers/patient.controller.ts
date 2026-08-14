@@ -325,7 +325,8 @@ export const handleUpdatePatientLifestyle = async (req: Request, res: Response) 
     }
     catch (err) {
         res.status(400).json({ error: "Unable to update patient Lifestyle." });
-}
+    }
+};
 
 export const handleUpdatePatientPersonalDetails = async (req: Request, res: Response) => {
     try {
