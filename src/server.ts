@@ -4,11 +4,21 @@ import mainRouter from './api/index.js'; // Import the main router
 import cors from "cors";
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
-const allowedOrigins = ['http://localhost:5173'];
+const allowedOrigins = process.env.CORS_ORIGIN 
+    ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) 
+    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174'];
+
 const options: cors.CorsOptions = {
-    origin: allowedOrigins
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(null, true);
+        }
+    },
+    credentials: true
 };
 
 app.use(cors(options));
@@ -17,5 +27,5 @@ app.use(express.json());
 app.use('/api/v1', mainRouter);
 
 app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+    console.log(`Server is running on port ${port}`);
 });
