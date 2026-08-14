@@ -109,6 +109,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
     res.json({
         responses: [{ "text": responseText }],
-        events: [{ "event": "bot", "text": responseText }]
+        events: []
     });
 };
