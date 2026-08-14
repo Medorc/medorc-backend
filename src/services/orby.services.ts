@@ -3,20 +3,22 @@ import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 const prisma = new PrismaClient();
 
-const getPatientWhereClause = (shc_code?: string, qr_code?: string): Prisma.patientsWhereUniqueInput => {
+const getPatientWhereClause = (shc_code?: string, qr_code?: string): Prisma.patientsWhereUniqueInput | null => {
     if (shc_code) return { shc_code: shc_code };
     if (qr_code) return { qr_code: qr_code };
-    throw new Error("An identifier (shc_code or qr_code) must be provided.");
+    return null;
 };
 
 const getPatientId = async (shc_code?: string, qr_code?: string): Promise<string | null> => {
     const whereClause = getPatientWhereClause(shc_code, qr_code);
+    if (!whereClause) return null;
     const patient = await prisma.patients.findUnique({ where: whereClause, select: { patient_id: true } });
     return patient?.patient_id ?? null;
 };
 
 export const findPatientHospitalVisit = async (entities: any[], shc_code?: string, qr_code?: string): Promise<string> => {
     const whereClause = getPatientWhereClause(shc_code, qr_code);
+    if (!whereClause) return "Please log in or provide your SHC Code to view hospital visits.";
     const hospitalNameEntity = entities.find(e => e.entity === 'hospital_name');
     const dateRangeEntity = entities.find(e => e.entity === 'date_range');
     const dateFilter: { gte?: Date; lt?: Date } = {};
