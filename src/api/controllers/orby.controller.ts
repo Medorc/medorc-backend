@@ -112,3 +112,102 @@ export const handleWebhook = async (req: Request, res: Response) => {
         events: []
     });
 };
+
+const RASA_SERVER_URL = process.env.RASA_URL || "https://medorc-orby-chatbot.onrender.com";
+
+export const handleOrbyChat = async (req: Request, res: Response) => {
+    const { sender, message, shc_code, qr_code, metadata } = req.body || {};
+    const text = (message || "").trim();
+    const activeShc = shc_code || metadata?.shc_code;
+    const activeQr = qr_code || metadata?.qr_code;
+    const senderId = sender || `orby_${activeShc || "user"}`;
+
+    if (!text) {
+        return res.json({ responses: [{ text: "Please enter a question or message." }] });
+    }
+
+    // Try forwarding to RASA REST webhook
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+        const rasaRes = await fetch(`${RASA_SERVER_URL.replace(/\/$/, '')}/webhooks/rest/webhook`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sender: senderId,
+                message: text,
+                metadata: {
+                    shc_code: activeShc,
+                    qr_code: activeQr
+                }
+            }),
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (rasaRes.ok) {
+            const data = await rasaRes.json();
+            if (Array.isArray(data) && data.length > 0) {
+                return res.json({ responses: data });
+            }
+        }
+    } catch (err) {
+        console.warn("Rasa server unavailable, using direct fallback:", (err as Error).message);
+    }
+
+    // Direct fallback using intent matching and orbyService
+    let responseText = "";
+    const lower = text.toLowerCase();
+
+    try {
+        if (lower.includes("allergy") || lower.includes("allergies")) {
+            responseText = await orbyService.checkPatientAllergy(activeShc, activeQr);
+        } else if (lower.includes("medication") || lower.includes("meds") || lower.includes("prescription") || lower.includes("medicine")) {
+            responseText = await orbyService.findPatientCurrentMedications(activeShc, activeQr);
+        } else if (lower.includes("emergency") || lower.includes("contact")) {
+            responseText = await orbyService.findPatientEmergencyContact([], activeShc, activeQr);
+        } else if (lower.includes("tip") || lower.includes("advice") || lower.includes("health tip")) {
+            responseText = await orbyService.getHealthTip([]);
+        } else if (lower.includes("hospitalization") || lower.includes("admitted")) {
+            responseText = await orbyService.findPatientLastHospitalization(activeShc, activeQr);
+        } else if (lower.includes("surgery") || lower.includes("operation")) {
+            responseText = await orbyService.findPatientLastSurgery(activeShc, activeQr);
+        } else if (lower.includes("visit") || lower.includes("hospital")) {
+            responseText = await orbyService.findPatientLastHospitalVisit(activeShc, activeQr);
+        } else if (lower.includes("doctor")) {
+            responseText = await orbyService.findPatientDoctorVisit([], activeShc, activeQr);
+        } else if (lower.includes("lab") || lower.includes("report") || lower.includes("result")) {
+            responseText = await orbyService.findPatientLabResults([], activeShc, activeQr);
+        } else if (lower.includes("diagnos")) {
+            responseText = await orbyService.findPatientPastDiagnoses(activeShc, activeQr);
+        } else if (lower.includes("overview") || lower.includes("summary") || lower.includes("profile")) {
+            responseText = await orbyService.getPatientOverview(activeShc, activeQr);
+        } else if (lower.includes("habit") || lower.includes("smoking") || lower.includes("alcohol")) {
+            responseText = await orbyService.checkPatientHabits(activeShc, activeQr);
+        } else if (lower.includes("pregnancy") || lower.includes("pregnant")) {
+            responseText = await orbyService.checkPatientPregnancy(activeShc, activeQr);
+        } else if (lower.includes("count") || lower.includes("how many record")) {
+            responseText = await orbyService.getRecordCount([], activeShc, activeQr);
+        } else if (lower.includes("treatment")) {
+            responseText = await orbyService.findTreatmentsForDiagnosis([], activeShc, activeQr);
+        } else if (lower.includes("last record") || lower.includes("recent record") || lower.includes("latest record")) {
+            responseText = await orbyService.findPatientLastRecord(activeShc, activeQr);
+        } else {
+            responseText = `Hello! I'm Orby, your Medorc AI Assistant. How can I help you today? You can ask me about:\n` +
+                `• **Allergies**: "What are my allergies?"\n` +
+                `• **Medications**: "List my active medications"\n` +
+                `• **Emergency Contacts**: "Show my emergency contacts"\n` +
+                `• **Hospital Visits**: "Show my last hospital visit"\n` +
+                `• **Past Diagnoses**: "What are my past diagnoses?"\n` +
+                `• **Health Tips**: "Give me a health tip"`;
+        }
+    } catch (fallbackErr) {
+        console.error("Error executing direct intent fallback:", fallbackErr);
+        responseText = "I'm sorry, I encountered an error processing your query. Please try again.";
+    }
+
+    return res.json({
+        responses: [{ text: responseText }]
+    });
+};
