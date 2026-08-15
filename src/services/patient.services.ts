@@ -485,11 +485,35 @@ export const createPatientRecord = async (
     if (!patient) {
         throw new Error("Patient not found.");
     }
+
+    const b = record.basicDetails as any;
+    
+    // Map basicDetails to valid Prisma patient_medical_records fields
+    let appointmentDate: Date | null = null;
+    if (b.appointment_date) {
+        const parsedDate = new Date(b.appointment_date);
+        if (!isNaN(parsedDate.getTime())) {
+            appointmentDate = parsedDate;
+        }
+    }
+
+    // Combine symptoms/treatment notes cleanly if specific fields are passed
+    const historyOfPresentIllness = b.history_of_present_illness || b.symptoms || b.doctor_notes || null;
+    const treatmentUndergone = b.treatment_undergone || b.treatment_summary || b.prescribed_medications || b.follow_up_advice || null;
+
     const recordCreateData: Prisma.patient_medical_recordsCreateInput = {
         patient: { connect: { patient_id: patient.patient_id } },
-        created_at: new Date(), // Set the creation timestamp
-        entry_type: "Self",
-        ...record.basicDetails
+        created_at: new Date(),
+        entry_type: b.entry_type || "Self",
+        diagnosis_name: b.diagnosis_name || null,
+        history_of_present_illness: historyOfPresentIllness,
+        treatment_undergone: treatmentUndergone,
+        doctor_name: b.doctor_name || null,
+        hospital_name: b.hospital_name || null,
+        appointment_date: appointmentDate,
+        reg_no: b.reg_no || null,
+        alternative_system_of_medicine: b.alternative_system_of_medicine || null,
+        visibility: b.visibility !== undefined ? Boolean(b.visibility) : true
     };
 
     if (typeof creatorPayload === 'object' && creatorPayload.role === 'doctor' && creatorPayload.id) {
@@ -505,45 +529,71 @@ export const createPatientRecord = async (
     }
 
     return prisma.$transaction(async (tx) => {
-        // Create the main medical record using the dynamically built data
+        // Create the main medical record using the sanitized data
         const newRecord = await tx.patient_medical_records.create({
             data: recordCreateData
         });
 
-        // Conditionally create hospitalization details
+        // Conditionally create hospitalization details with valid fields
         if (record.hospitalizationDetails) {
-            await tx.patient_hospitalization_details.create({
-                data: {
-                    record_id: newRecord.record_id,
-                    ...record.hospitalizationDetails
-                }
-            });
+            const h = record.hospitalizationDetails as any;
+            const duration = h.duration || (h.admission_date && h.discharge_date ? `${h.admission_date} to ${h.discharge_date}` : null);
+            const reason = h.reason || h.discharge_summary || null;
+            const room_no = h.room_no || h.room_type || null;
+            const treatment_undergone = h.treatment_undergone || null;
+
+            if (duration || reason || room_no || treatment_undergone) {
+                await tx.patient_hospitalization_details.create({
+                    data: {
+                        record_id: newRecord.record_id,
+                        duration,
+                        reason,
+                        room_no,
+                        treatment_undergone
+                    }
+                });
+            }
         }
 
-        // Conditionally create surgery details
+        // Conditionally create surgery details with valid fields
         if (record.surgeryDetails) {
-            await tx.patient_surgery_details.create({
-                data: {
-                    record_id: newRecord.record_id,
-                    ...record.surgeryDetails
-                }
-            });
+            const s = record.surgeryDetails as any;
+            const type = s.type || s.surgery_name || null;
+            const duration = s.duration || null;
+            const outcome = s.outcome || s.complications || null;
+            const medical_condition = s.medical_condition || s.implant_details || null;
+            const bed_no = s.bed_no || s.surgeon_name || null;
+
+            if (type || duration || outcome || medical_condition || bed_no) {
+                await tx.patient_surgery_details.create({
+                    data: {
+                        record_id: newRecord.record_id,
+                        type,
+                        duration,
+                        outcome,
+                        medical_condition,
+                        bed_no
+                    }
+                });
+            }
         }
 
         // Conditionally create documents
-        if (record.documents && (record.documents.prescription || record.documents.lab_results)) {
-            const documentData: Prisma.patient_documentsCreateInput = {
-                medical_record: {
-                    connect: { record_id: newRecord.record_id }
-                }
-            };
-            if (record.documents.prescription) {
-                documentData.prescriptions = record.documents.prescription;
+        if (record.documents) {
+            const docs = record.documents as any;
+            const prescriptions = docs.prescriptions || docs.prescription || null;
+            const lab_results = docs.lab_results || null;
+
+            if (prescriptions || lab_results) {
+                const documentData: Prisma.patient_documentsCreateInput = {
+                    medical_record: {
+                        connect: { record_id: newRecord.record_id }
+                    },
+                    prescriptions,
+                    lab_results
+                };
+                await tx.patient_documents.create({ data: documentData });
             }
-            if (record.documents.lab_results) {
-                documentData.lab_results = record.documents.lab_results;
-            }
-            await tx.patient_documents.create({ data: documentData });
         }
 
         return { record_id: newRecord.record_id };
@@ -552,8 +602,14 @@ export const createPatientRecord = async (
 
 export const addPatientHospitalizationDetails = async (record_id: string, hospitalizationDetails: HospitalizationRecordDetails) => {
     if (!hospitalizationDetails || !record_id) {
-        throw new Error("Hospitalization  details & record_id must be provided.");
+        throw new Error("Hospitalization details & record_id must be provided.");
     }
+    const h = hospitalizationDetails as any;
+    const duration = h.duration || (h.admission_date && h.discharge_date ? `${h.admission_date} to ${h.discharge_date}` : null);
+    const reason = h.reason || h.discharge_summary || null;
+    const room_no = h.room_no || h.room_type || null;
+    const treatment_undergone = h.treatment_undergone || null;
+
     return prisma.$transaction(async (tx) => {
         const existingHospitalization = await tx.patient_hospitalization_details.findFirst({
             where: { record_id },
@@ -568,17 +624,27 @@ export const addPatientHospitalizationDetails = async (record_id: string, hospit
         const newHospitalizationDetails = await tx.patient_hospitalization_details.create({
             data: {
                 record_id: record_id,
-                ...hospitalizationDetails
+                duration,
+                reason,
+                room_no,
+                treatment_undergone
             }
         });
         return newHospitalizationDetails;
-    })
+    });
 }
 
 export const addPatientSurgeryDetails = async (record_id: string, surgeryDetails: SurgeryRecordDetails) => {
     if (!surgeryDetails || !record_id) {
         throw new Error("Surgery details & record_id must be provided.");
     }
+    const s = surgeryDetails as any;
+    const type = s.type || s.surgery_name || null;
+    const duration = s.duration || null;
+    const outcome = s.outcome || s.complications || null;
+    const medical_condition = s.medical_condition || s.implant_details || null;
+    const bed_no = s.bed_no || s.surgeon_name || null;
+
     return prisma.$transaction(async (tx) => {
         const existingSurgery = await tx.patient_surgery_details.findFirst({
             where: { record_id },
@@ -593,12 +659,15 @@ export const addPatientSurgeryDetails = async (record_id: string, surgeryDetails
         const newSurgeryDetails = await tx.patient_surgery_details.create({
             data: {
                 record_id: record_id,
-                ...surgeryDetails
+                type,
+                duration,
+                outcome,
+                medical_condition,
+                bed_no
             }
         });
         return newSurgeryDetails;
-    })
-
+    });
 }
 
 export const addPatientPrescription = async (record_id: string, prescription_url: string) => {
