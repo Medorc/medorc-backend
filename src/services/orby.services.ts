@@ -285,7 +285,7 @@ export const findPatientCurrentMedications = async (shc_code?: string, qr_code?:
 
     const latestRecord = await prisma.patient_medical_records.findFirst({
         where: { patient_id: patientId },
-        orderBy: { appointment_date: 'desc' },
+        orderBy: { created_at: 'desc' },
         include: { patient_documents: true }
     });
 
@@ -294,16 +294,26 @@ export const findPatientCurrentMedications = async (shc_code?: string, qr_code?:
     }
 
     const documents = latestRecord.patient_documents;
-    if (documents.length === 0) {
-        return "No prescription documents were found for the latest record.";
+    const prescriptions = documents[0]?.prescriptions;
+    const treatmentText = latestRecord.treatment_undergone || "";
+    const date = latestRecord.appointment_date ? new Date(latestRecord.appointment_date).toLocaleDateString('en-IN') : new Date(latestRecord.created_at!).toLocaleDateString('en-IN');
+
+    let contentStr = "";
+    if (treatmentText) {
+        contentStr += `Treatment Notes: ${treatmentText}<br>`;
     }
 
-    const prescriptions = documents[0]?.prescriptions;
-    if (!prescriptions) {
-        return "The latest record has a document, but no prescription was noted.";
+    if (prescriptions) {
+        if (prescriptions.startsWith("http://") || prescriptions.startsWith("https://")) {
+            contentStr += `<a href="${prescriptions}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 font-semibold text-xs transition-colors my-1">📄 Open Prescription Document</a>`;
+        } else {
+            contentStr += `Prescription: ${prescriptions}`;
+        }
+    } else if (!treatmentText) {
+        contentStr = "No active prescription document or treatment summary was found for your latest record.";
     }
-    const date = new Date(latestRecord.appointment_date!).toLocaleDateString('en-IN');
-    return `Current Medications (as of ${date}):<br>-------------------<br>${prescriptions}`;
+
+    return `Current Medications (as of ${date}):<br>-------------------<br>${contentStr}`;
 };
 
 export const findPatientDoctorVisit = async (entities: any[], shc_code?: string, qr_code?: string): Promise<string> => {

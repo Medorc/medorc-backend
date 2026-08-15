@@ -191,7 +191,7 @@ export const handleOrbyChat = async (req: Request, res: Response) => {
             responseText = await orbyService.getRecordCount([], activeShc, activeQr);
         } else if (lower.includes("treatment")) {
             responseText = await orbyService.findTreatmentsForDiagnosis([], activeShc, activeQr);
-        } else if (lower.includes("last record") || lower.includes("recent record") || lower.includes("latest record")) {
+        } else if (lower.includes("activity") || lower.includes("last record") || lower.includes("recent record") || lower.includes("latest record") || lower.includes("history") || lower.includes("recent")) {
             responseText = await orbyService.findPatientLastRecord(activeShc, activeQr);
         } else {
             responseText = `Hello! I'm Orby, your Medorc AI Assistant. How can I help you today? You can ask me about:\n` +
