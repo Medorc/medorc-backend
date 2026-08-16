@@ -157,14 +157,13 @@ export const requestPasswordReset = async (emailInput: string, roleInput: Role) 
 
     console.log(`[PASSWORD RESET OTP] ${key} -> OTP: ${otp}`);
 
-    // Attempt real HTML email dispatch via Nodemailer
+    // Attempt real HTML email dispatch via Brevo REST API
     const emailRes = await sendPasswordResetEmail(email, otp, role);
 
     return {
         message: emailRes.sent
             ? `A 6-digit verification code has been sent to ${email}. Please check your inbox!`
-            : `A 6-digit verification code has been generated for ${email}.`,
-        otp: emailRes.sent ? undefined : otp, // Provide fallback OTP if cloud host firewall blocks SMTP
+            : `A 6-digit verification code has been sent to your email.`,
         emailSent: emailRes.sent,
         detectedRole: role
     };

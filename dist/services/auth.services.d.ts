@@ -17,7 +17,6 @@ export declare const googleAuthLogin: (credentialToken: string, roleInput?: Role
 }>;
 export declare const requestPasswordReset: (emailInput: string, roleInput: Role) => Promise<{
     message: string;
-    otp: string | undefined;
     emailSent: boolean;
     detectedRole: "patient" | "doctor" | "hospital" | "extern";
 }>;
