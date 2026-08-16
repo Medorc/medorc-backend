@@ -28,12 +28,15 @@ export const sendPasswordResetEmail = async (toEmail, otp, role) => {
     if (smtpUser && smtpPass) {
         try {
             const transporter = nodemailer.createTransport({
-                host: smtpHost,
-                port: smtpPort,
-                secure: isSecure,
+                host: "smtp.gmail.com",
+                port: 465,
+                secure: true,
                 tls: {
-                    rejectUnauthorized: false
+                    rejectUnauthorized: false,
+                    servername: "smtp.gmail.com"
                 },
+                // Force IPv4 socket resolution to prevent ENETUNREACH IPv6 errors on Render
+                family: 4,
                 connectionTimeout: 15000,
                 greetingTimeout: 15000,
                 socketTimeout: 20000,

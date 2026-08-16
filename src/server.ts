@@ -4,6 +4,7 @@ import mainRouter from './api/index.js'; // Import the main router
 import cors from "cors";
 
 const app = express();
+app.set('trust proxy', 1); // Trust reverse proxy on Render/Cloudflare
 const port = process.env.PORT || 3000;
 
 const allowedOrigins = process.env.CORS_ORIGIN 
