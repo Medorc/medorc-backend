@@ -9,12 +9,8 @@ const allowedOrigins = process.env.CORS_ORIGIN
     : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174'];
 const options = {
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        }
-        else {
-            callback(null, true);
-        }
+        // Return the requesting origin to satisfy browser credentials: true policy
+        callback(null, origin || true);
     },
     credentials: true
 };

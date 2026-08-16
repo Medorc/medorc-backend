@@ -12,11 +12,8 @@ const allowedOrigins = process.env.CORS_ORIGIN
 
 const options: cors.CorsOptions = {
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(null, true);
-        }
+        // Return the requesting origin to satisfy browser credentials: true policy
+        callback(null, origin || true);
     },
     credentials: true
 };
