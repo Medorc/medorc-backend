@@ -125,14 +125,29 @@ export const googleAuthLogin = async (credentialToken: string, roleInput?: Role)
 // Store OTP reset codes in-memory with 10-minute expiration
 const resetOtpStore = new Map<string, { otp: string; expiresAt: number }>();
 
-export const requestPasswordReset = async (emailInput: string, role: Role) => {
+export const requestPasswordReset = async (emailInput: string, roleInput: Role) => {
     const email = (emailInput || "").trim().toLowerCase();
-    const model: UserModel = models[role];
-    if (!model) throw new Error("Invalid role specified.");
+    let role: Role = roleInput;
+    let model: UserModel = models[role];
 
-    const user = await (model as any).findUnique({ where: { email } });
+    let user = model ? await (model as any).findUnique({ where: { email } }) : null;
+
+    // Fallback: Auto-detect user role across all account types if role mismatch
     if (!user) {
-        throw new Error(`No registered ${role} account found with email "${email}". Please verify your email and account type.`);
+        const allRoles: Role[] = ["patient", "doctor", "hospital", "extern"];
+        for (const r of allRoles) {
+            const m = models[r];
+            const found = await (m as any).findUnique({ where: { email } });
+            if (found) {
+                user = found;
+                role = r;
+                break;
+            }
+        }
+    }
+
+    if (!user) {
+        throw new Error(`No registered account found with email "${email}". Please verify your email or sign up.`);
     }
 
     // Generate 6-digit OTP code
@@ -142,7 +157,7 @@ export const requestPasswordReset = async (emailInput: string, role: Role) => {
 
     console.log(`[PASSWORD RESET OTP] ${key} -> OTP: ${otp}`);
 
-    // Dispatch real HTML email in the background asynchronously so API response is instant (zero UI lag)
+    // Dispatch real HTML email in the background asynchronously so API response is instant
     sendPasswordResetEmail(email, otp, role).catch((err) =>
         console.error(`[BACKGROUND EMAIL FAILED] ${key}:`, err)
     );
@@ -150,20 +165,35 @@ export const requestPasswordReset = async (emailInput: string, role: Role) => {
     return {
         message: `A 6-digit verification code has been sent to ${email}. Please check your inbox!`,
         emailSent: true,
+        detectedRole: role
     };
 };
 
-export const resetPassword = async (emailInput: string, role: Role, otp: string, newPassword: string) => {
+export const resetPassword = async (emailInput: string, roleInput: Role, otp: string, newPassword: string) => {
     const email = (emailInput || "").trim().toLowerCase();
-    const model: UserModel = models[role];
-    if (!model) throw new Error("Invalid role specified.");
+    let role: Role = roleInput;
 
     if (!newPassword || newPassword.length < 8) {
         throw new Error("New password must be at least 8 characters long.");
     }
 
-    const key = `${role}:${email}`;
-    const record = resetOtpStore.get(key);
+    // Check store with roleInput or try all roles if key missing
+    let key = `${role}:${email}`;
+    let record = resetOtpStore.get(key);
+
+    if (!record) {
+        const allRoles: Role[] = ["patient", "doctor", "hospital", "extern"];
+        for (const r of allRoles) {
+            const k = `${r}:${email}`;
+            const rec = resetOtpStore.get(k);
+            if (rec) {
+                record = rec;
+                key = k;
+                role = r;
+                break;
+            }
+        }
+    }
 
     if (!record || record.otp !== otp.trim()) {
         throw new Error("Invalid or expired reset OTP code.");

@@ -15,11 +15,12 @@ export declare const googleAuthLogin: (credentialToken: string, roleInput?: Role
     shc_code: string | undefined;
     user: any;
 }>;
-export declare const requestPasswordReset: (emailInput: string, role: Role) => Promise<{
+export declare const requestPasswordReset: (emailInput: string, roleInput: Role) => Promise<{
     message: string;
     emailSent: boolean;
+    detectedRole: "patient" | "doctor" | "hospital" | "extern";
 }>;
-export declare const resetPassword: (emailInput: string, role: Role, otp: string, newPassword: string) => Promise<{
+export declare const resetPassword: (emailInput: string, roleInput: Role, otp: string, newPassword: string) => Promise<{
     message: string;
 }>;
 export declare const checkEmailExists: (emailInput: string, roleInput?: string) => Promise<{
