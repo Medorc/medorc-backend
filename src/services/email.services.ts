@@ -1,14 +1,8 @@
+import { Resend } from "resend";
 import nodemailer from "nodemailer";
-import dns from "dns";
-
-// Force Node.js to resolve IPv4 addresses before IPv6 across all network calls
-try {
-    dns.setDefaultResultOrder("ipv4first");
-} catch (e) {
-    // Fallback for older Node versions
-}
 
 export const sendPasswordResetEmail = async (toEmail: string, otp: string, role: string) => {
+    const resendApiKey = process.env.RESEND_API_KEY;
     const smtpUser = process.env.SMTP_USER;
     const smtpPass = process.env.SMTP_PASS;
 
@@ -32,28 +26,33 @@ export const sendPasswordResetEmail = async (toEmail: string, otp: string, role:
     </div>
     `;
 
+    // Priority 1: Resend HTTPS REST API (Port 443 - 100% Reliable on Render/Cloud)
+    if (resendApiKey) {
+        try {
+            const resend = new Resend(resendApiKey);
+            const data = await resend.emails.send({
+                from: "Medorc Health Security <onboarding@resend.dev>",
+                to: [toEmail],
+                subject: `🔐 ${otp} is your Medorc Password Reset Code`,
+                html: htmlContent,
+            });
+
+            console.log(`[RESEND API SUCCESS] Email dispatched to ${toEmail}:`, data);
+            return { sent: true };
+        } catch (resendError) {
+            console.error(`[RESEND API ERROR]`, resendError);
+        }
+    }
+
+    // Priority 2: Nodemailer SMTP Fallback
     if (smtpUser && smtpPass) {
         try {
             const transporter = nodemailer.createTransport({
                 host: "smtp.gmail.com",
                 port: 465,
                 secure: true,
-                lookup: (hostname: string, options: any, callback: any) => {
-                    dns.lookup(hostname, { family: 4 }, (err, address, family) => {
-                        callback(err, address, family);
-                    });
-                },
-                tls: {
-                    rejectUnauthorized: false,
-                    servername: "smtp.gmail.com"
-                },
-                connectionTimeout: 15000,
-                greetingTimeout: 15000,
-                socketTimeout: 20000,
-                auth: {
-                    user: smtpUser,
-                    pass: smtpPass,
-                },
+                tls: { rejectUnauthorized: false },
+                auth: { user: smtpUser, pass: smtpPass },
             } as any);
 
             await transporter.sendMail({
@@ -63,13 +62,11 @@ export const sendPasswordResetEmail = async (toEmail: string, otp: string, role:
                 html: htmlContent,
             });
 
-            console.log(`[EMAIL SERVICE SUCCESS] Reset OTP email sent to ${toEmail} via SMTP.`);
+            console.log(`[SMTP SUCCESS] Reset OTP email sent to ${toEmail} via SMTP.`);
             return { sent: true };
-        } catch (error) {
-            console.error(`[EMAIL SERVICE ERROR] Failed to send email via SMTP:`, error);
+        } catch (smtpError) {
+            console.error(`[SMTP ERROR] Failed to send via SMTP:`, smtpError);
         }
-    } else {
-        console.log(`[EMAIL SERVICE NOTICE] SMTP credentials not set in .env. Logging OTP for local development: ${otp}`);
     }
 
     return { sent: false };
