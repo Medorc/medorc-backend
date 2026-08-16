@@ -11,9 +11,9 @@ async function seedDemoData() {
         where: { email: patientEmail }
     });
     const logsArray = [
-        `${new Date(Date.now() - 3600000 * 2).toISOString()} - DOCTOR [Dr. Ananya Roy] accessed your medical records`,
-        `${new Date(Date.now() - 3600000 * 24).toISOString()} - HOSPITAL [Apollo Multi-Specialty Hospital] accessed your profile`,
-        `${new Date(Date.now() - 3600000 * 72).toISOString()} - DOCTOR [Dr. Rajesh Sharma] added a new medical record`,
+        `${new Date(Date.now() - 3600000 * 2).toISOString()} - DOCTOR [Dr. Ananya Roy] visited your profile`,
+        `${new Date(Date.now() - 3600000 * 24).toISOString()} - HOSPITAL [Apollo Multi-Specialty Hospital] visited your profile`,
+        `${new Date(Date.now() - 3600000 * 72).toISOString()} - DOCTOR [Dr. Rajesh Sharma] created a new record`,
         `${new Date(Date.now() - 3600000 * 120).toISOString()} - EXTERN [Central Diagnostic Lab] requested SHC verification`
     ];
     const dataLogsString = logsArray.join("\n");
