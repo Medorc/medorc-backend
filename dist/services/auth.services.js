@@ -122,9 +122,8 @@ export const requestPasswordReset = async (emailInput, role) => {
     const emailRes = await sendPasswordResetEmail(email, otp, role);
     return {
         message: emailRes.sent
-            ? `A 6-digit verification code has been sent to ${email}. Check your inbox (and Spam folder)!`
-            : `Verification code generated for ${email}.`,
-        otp, // Provided as demo fallback
+            ? `A 6-digit verification code has been sent to ${email}. Check your inbox!`
+            : "A 6-digit verification code has been sent to your email.",
         emailSent: emailRes.sent
     };
 };
