@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
+import { sendPasswordResetEmail } from "./email.services.js";
 
 const prisma = new PrismaClient();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -141,9 +142,15 @@ export const requestPasswordReset = async (emailInput: string, role: Role) => {
 
     console.log(`[PASSWORD RESET OTP] ${key} -> OTP: ${otp}`);
 
+    // Send real HTML email via SMTP if credentials exist
+    const emailRes = await sendPasswordResetEmail(email, otp, role);
+
     return {
-        message: "Password reset OTP code generated successfully.",
-        otp, // Included for instant demo convenience
+        message: emailRes.sent
+            ? `A password reset OTP code has been sent to ${email}. Please check your inbox!`
+            : "Password reset OTP code generated successfully.",
+        otp, // Included for instant demo testing
+        emailSent: emailRes.sent
     };
 };
 
