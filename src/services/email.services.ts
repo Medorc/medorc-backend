@@ -1,6 +1,6 @@
 export const sendPasswordResetEmail = async (toEmail: string, otp: string, role: string) => {
     const brevoApiKey = (process.env.BREVO_API_KEY || "").trim();
-    const senderEmail = process.env.SMTP_USER || "noreply.medorc@gmail.com";
+    const senderEmail = process.env.SENDER_EMAIL || process.env.SMTP_USER || "ilakkiyanj03@gmail.com";
 
     const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
