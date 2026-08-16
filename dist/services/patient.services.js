@@ -402,6 +402,34 @@ export const deletePatientEmergencyContact = async (patient_id, emg_id) => {
     }
     return deletedContact;
 };
+export const getVisitorDisplayName = async (id, role) => {
+    try {
+        if (role === "doctor") {
+            const doc = await prisma.doctors.findUnique({ where: { doctor_id: id }, select: { full_name: true } });
+            if (doc?.full_name)
+                return doc.full_name;
+        }
+        else if (role === "hospital") {
+            const hosp = await prisma.hospitals.findUnique({ where: { hospital_id: id }, select: { name: true } });
+            if (hosp?.name)
+                return hosp.name;
+        }
+        else if (role === "extern") {
+            const ext = await prisma.external_viewers.findUnique({ where: { viewer_id: id }, select: { full_name: true, org_name: true } });
+            if (ext?.full_name || ext?.org_name)
+                return ext.full_name || ext.org_name || id;
+        }
+        else if (role === "patient") {
+            const pt = await prisma.patients.findUnique({ where: { patient_id: id }, select: { full_name: true } });
+            if (pt?.full_name)
+                return pt.full_name;
+        }
+    }
+    catch {
+        /* fallback to id */
+    }
+    return id;
+};
 export const addPatientDataLog = async (patientIdentifier, newLogEntry) => {
     // Find the patient and retrieve their existing logs
     let whereClause = getPatientWhereClause(patientIdentifier.patient_id, patientIdentifier.shc_code, patientIdentifier.qr_code);

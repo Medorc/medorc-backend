@@ -113,6 +113,7 @@ export declare const deletePatientEmergencyContact: (patient_id: string, emg_id:
     emg_id: string;
     relation: string | null;
 }>;
+export declare const getVisitorDisplayName: (id: string, role: string) => Promise<string>;
 export declare const addPatientDataLog: (patientIdentifier: PatientIdentifier, newLogEntry: string) => Promise<void>;
 export declare const createPatientRecord: (patientIdentifier: PatientIdentifier, record: Record, creatorPayload: JwtPayload | string) => Promise<{
     record_id: string;

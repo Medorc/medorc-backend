@@ -39,8 +39,9 @@ export const handleGetPatientProfile = async (req, res) => {
                     // Re-extract codes for logging scope
                     const shc_code = typeof req.query.shc_code === 'string' ? req.query.shc_code : undefined;
                     const qr_code = typeof req.query.qr_code === 'string' ? req.query.qr_code : undefined;
-                    patientIdentifier = { shc_code, qr_code };
-                    const logMessage = `${new Date().toISOString()} - ${visitorRole.toUpperCase()} [${visitorId}] visited your profile`;
+                    const visitorId = String(userPayload.id || "");
+                    const visitorName = await patientService.getVisitorDisplayName(visitorId, visitorRole);
+                    const logMessage = `${new Date().toISOString()} - ${visitorRole.toUpperCase()} [${visitorName}] visited your profile`;
                     // Fire-and-forget logging
                     await patientService.addPatientDataLog(patientIdentifier, logMessage);
                 }
@@ -491,9 +492,10 @@ export const handleCreatePatientRecord = async (req, res) => {
         );
         //--LOGGING CALL
         try {
-            const creatorId = userPayload.id;
-            const creatorRole = userPayload.role;
-            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] created a new record [${newRecord.record_id}]]`;
+            const creatorId = String(userPayload.id || "");
+            const creatorRole = String(userPayload.role || "");
+            const creatorName = await patientService.getVisitorDisplayName(creatorId, creatorRole);
+            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorName}] created a new record [${newRecord.record_id}]`;
             // Call the logging service (fire-and-forget)
             await patientService.addPatientDataLog(patientIdentifier, logMessage);
         }
@@ -549,9 +551,10 @@ export const handleAddPatientHospitalizationDetails = async (req, res) => {
             else {
                 return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
             }
-            const creatorId = userPayload.id;
-            const creatorRole = userPayload.role;
-            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] Added hospitalization details to record_id [${record_id}]]`;
+            const creatorId = String(userPayload.id || "");
+            const creatorRole = String(userPayload.role || "");
+            const creatorName = await patientService.getVisitorDisplayName(creatorId, creatorRole);
+            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorName}] Added hospitalization details to record_id [${record_id}]`;
             // Call the logging service (fire-and-forget)
             await patientService.addPatientDataLog(patientIdentifier, logMessage);
         }
@@ -601,9 +604,10 @@ export const handleAddPatientSurgeryDetails = async (req, res) => {
             else {
                 return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
             }
-            const creatorId = userPayload.id;
-            const creatorRole = userPayload.role;
-            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] Added surgery details to record_id [${record_id}]]`;
+            const creatorId = String(userPayload.id || "");
+            const creatorRole = String(userPayload.role || "");
+            const creatorName = await patientService.getVisitorDisplayName(creatorId, creatorRole);
+            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorName}] Added surgery details to record_id [${record_id}]`;
             // Call the logging service (fire-and-forget)
             await patientService.addPatientDataLog(patientIdentifier, logMessage);
         }
@@ -651,9 +655,10 @@ export const handleAddPatientPrescription = async (req, res) => {
             else {
                 return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
             }
-            const creatorId = userPayload.id;
-            const creatorRole = userPayload.role;
-            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] Added prescription to record_id [${record_id}]]`;
+            const creatorId = String(userPayload.id || "");
+            const creatorRole = String(userPayload.role || "");
+            const creatorName = await patientService.getVisitorDisplayName(creatorId, creatorRole);
+            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorName}] Added prescription to record_id [${record_id}]`;
             // Call the logging service (fire-and-forget)
             await patientService.addPatientDataLog(patientIdentifier, logMessage);
         }
@@ -748,9 +753,10 @@ export const handleAddPatientLabResults = async (req, res) => {
             else {
                 return res.status(403).json({ error: 'Your role is not authorized to perform this action.' });
             }
-            const creatorId = userPayload.id;
-            const creatorRole = userPayload.role;
-            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorId}] Added Lab results to record_id [${record_id}]]`;
+            const creatorId = String(userPayload.id || "");
+            const creatorRole = String(userPayload.role || "");
+            const creatorName = await patientService.getVisitorDisplayName(creatorId, creatorRole);
+            const logMessage = `${new Date().toISOString()} - ${creatorRole.toUpperCase()} [${creatorName}] Added Lab results to record_id [${record_id}]`;
             // Call the logging service (fire-and-forget)
             await patientService.addPatientDataLog(patientIdentifier, logMessage);
         }
