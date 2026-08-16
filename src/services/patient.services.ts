@@ -32,13 +32,26 @@ export const createPatient = async (patient: PatientDetails) => {
     const { password, ...restOfDetails } = patient;
     const saltRounds = 10;
     const password_hash = await bcrypt.hash(password, saltRounds);
+
+    const dob = restOfDetails.date_of_birth ? new Date(restOfDetails.date_of_birth) : null;
+    const validDob = dob && !isNaN(dob.getTime()) ? dob : null;
+
     const newUser = await prisma.patients.create({
         data: {
             ...restOfDetails,           // Spread the other details
-            date_of_birth: new Date(restOfDetails.date_of_birth),
+            date_of_birth: validDob,
             password: password_hash, // Use the correct field name for the hash
+            data_logs: `${new Date().toISOString()} - PATIENT [pending] Account Created`
         },
     });
+
+    // Update data_logs with real patient_id
+    const initialLog = `${new Date().toISOString()} - PATIENT [${newUser.patient_id}] Account Created`;
+    await prisma.patients.update({
+        where: { patient_id: newUser.patient_id },
+        data: { data_logs: initialLog }
+    });
+
     const token = jwt.sign(
         {
             id: newUser.patient_id,
