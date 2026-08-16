@@ -25,35 +25,57 @@ export const sendPasswordResetEmail = async (toEmail, otp, role) => {
       </div>
     </div>
     `;
+    // 1. Try Resend REST API direct to requested recipient
     try {
-        let { data, error } = await resend.emails.send({
+        const { data, error } = await resend.emails.send({
             from: "Medorc Health Security <onboarding@resend.dev>",
             to: [toEmail],
             subject: `🔐 ${otp} is your Medorc Password Reset Code`,
             html: htmlContent,
         });
-        // Resend test domain restriction: if sending to unverified external email in test mode, deliver copy to account owner
-        if (error && error.message?.includes("testing emails")) {
-            console.warn(`[RESEND TEST MODE] Forwarding verification code to account owner email (noreply.medorc@gmail.com)`);
-            const retry = await resend.emails.send({
-                from: "Medorc Health Security <onboarding@resend.dev>",
-                to: ["noreply.medorc@gmail.com"],
-                subject: `🔐 [For ${toEmail}] ${otp} is your Medorc Password Reset Code`,
-                html: htmlContent,
-            });
-            data = retry.data;
-            error = retry.error;
-        }
         if (!error && data) {
-            console.log(`[RESEND API SUCCESS] Email dispatched via Resend:`, data);
+            console.log(`[RESEND API SUCCESS] Email delivered directly to ${toEmail}:`, data);
             return { sent: true };
         }
-        else {
-            console.error(`[RESEND API ERROR]`, error);
+        else if (error) {
+            console.warn(`[RESEND NOTICE] ${error.message}`);
         }
     }
-    catch (resendError) {
-        console.error(`[RESEND EXCEPTION]`, resendError);
+    catch (resendErr) {
+        console.warn(`[RESEND EXCEPTION]`, resendErr);
+    }
+    // 2. Fallback: Nodemailer SMTPS Port 465 IPv4 (Can send to ANY email address in the world!)
+    const smtpUser = process.env.SMTP_USER || "noreply.medorc@gmail.com";
+    const smtpPass = process.env.SMTP_PASS || "pqjjirwouvsjhlrq";
+    if (smtpUser && smtpPass) {
+        try {
+            const nodemailer = await import("nodemailer");
+            const dns = await import("dns");
+            const transporter = nodemailer.default.createTransport({
+                host: "smtp.gmail.com",
+                port: 465,
+                secure: true,
+                lookup: (hostname, options, callback) => {
+                    dns.lookup(hostname, { family: 4 }, (err, address, family) => {
+                        callback(err, address, family);
+                    });
+                },
+                tls: { rejectUnauthorized: false, servername: "smtp.gmail.com" },
+                connectionTimeout: 10000,
+                auth: { user: smtpUser, pass: smtpPass.replace(/\s+/g, "") },
+            });
+            await transporter.sendMail({
+                from: `"Medorc Health Security" <${smtpUser}>`,
+                to: toEmail,
+                subject: `🔐 ${otp} is your Medorc Password Reset Code`,
+                html: htmlContent,
+            });
+            console.log(`[SMTP SMTPS SUCCESS] Email delivered directly to ${toEmail} via Gmail SMTP.`);
+            return { sent: true };
+        }
+        catch (smtpErr) {
+            console.error(`[SMTP ERROR]`, smtpErr);
+        }
     }
     return { sent: false };
 };
