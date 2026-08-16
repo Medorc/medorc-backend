@@ -24,8 +24,8 @@ async function seedDemoData() {
             data: {
                 full_name: "Ilakkiyan J",
                 phone_no: "9876543210",
-                shc_code: "8F92A140",
-                qr_code: "8F92A140",
+                shc_code: "SHC-8F92A140",
+                qr_code: "QR-8F92A140",
                 gender: "Male",
                 blood_group: "O+",
                 date_of_birth: new Date("1998-05-15"),
