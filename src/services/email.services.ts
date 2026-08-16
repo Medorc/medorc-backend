@@ -1,12 +1,16 @@
 import nodemailer from "nodemailer";
+import dns from "dns";
+
+// Force Node.js to resolve IPv4 addresses before IPv6 across all network calls
+try {
+    dns.setDefaultResultOrder("ipv4first");
+} catch (e) {
+    // Fallback for older Node versions
+}
 
 export const sendPasswordResetEmail = async (toEmail: string, otp: string, role: string) => {
     const smtpUser = process.env.SMTP_USER;
     const smtpPass = process.env.SMTP_PASS;
-    const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
-    const portEnv = Number(process.env.SMTP_PORT);
-    const smtpPort = portEnv && !isNaN(portEnv) ? portEnv : 465;
-    const isSecure = smtpPort === 465;
 
     const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded-radius: 12px; background-color: #ffffff;">
@@ -34,12 +38,15 @@ export const sendPasswordResetEmail = async (toEmail: string, otp: string, role:
                 host: "smtp.gmail.com",
                 port: 465,
                 secure: true,
+                lookup: (hostname: string, options: any, callback: any) => {
+                    dns.lookup(hostname, { family: 4 }, (err, address, family) => {
+                        callback(err, address, family);
+                    });
+                },
                 tls: {
                     rejectUnauthorized: false,
                     servername: "smtp.gmail.com"
                 },
-                // Force IPv4 socket resolution to prevent ENETUNREACH IPv6 errors on Render
-                family: 4,
                 connectionTimeout: 15000,
                 greetingTimeout: 15000,
                 socketTimeout: 20000,
