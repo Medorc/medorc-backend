@@ -9,5 +9,6 @@ authRoute.post("/signup", authLimiter, authController.handleSignup);
 authRoute.post("/google", authLimiter, authController.handleGoogleAuth);
 authRoute.post("/forgot-password", authLimiter, authController.handleForgotPassword);
 authRoute.post("/reset-password", authLimiter, authController.handleResetPassword);
+authRoute.get("/check-email", authController.handleCheckEmail);
 
 export default authRoute;

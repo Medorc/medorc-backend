@@ -37,9 +37,29 @@ export const handleGoogleAuth = async (req: Request, res: Response) => {
             role: result.role,
             shc_code: result.shc_code
         });
-    } catch (err) {
+    } catch (err: any) {
+        if (err?.isNewUser) {
+            return res.status(404).json({
+                isNewUser: true,
+                error: err.message,
+                email: err.userData?.email,
+                name: err.userData?.name,
+                picture: err.userData?.picture
+            });
+        }
         const errorMessage = err instanceof Error ? err.message : "Google authentication failed.";
         return res.status(400).json({ error: errorMessage });
+    }
+};
+
+export const handleCheckEmail = async (req: Request, res: Response) => {
+    try {
+        const email = String(req.query.email || "");
+        const role = String(req.query.role || "patient");
+        const result = await authService.checkEmailExists(email, role);
+        return res.status(200).json(result);
+    } catch (err) {
+        return res.status(200).json({ exists: false });
     }
 };
 

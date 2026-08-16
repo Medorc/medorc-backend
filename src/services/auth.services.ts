@@ -93,23 +93,12 @@ export const googleAuthLogin = async (credentialToken: string, roleInput?: Role)
     const model: UserModel = models[role];
     let user = await (model as any).findUnique({ where: { email } });
 
-    // Auto-create account if user signs in with Google for the first time as a patient
-    if (!user && role === "patient") {
-        const dummyPasswordHash = await bcrypt.hash(`google_${Date.now()}`, 10);
-        user = await prisma.patients.create({
-            data: {
-                email,
-                full_name: name,
-                photo: picture,
-                password: dummyPasswordHash,
-                visibility: true,
-                data_logs: `${new Date().toISOString()} - PATIENT [google_auth] Account Created via Google Sign-In`
-            }
-        });
-    }
-
     if (!user) {
-        throw new Error(`No registered ${role} account found for ${email}. Please sign up first.`);
+        // Return clear indication to frontend so user can complete signup
+        const error = new Error(`No registered ${role} account found for ${email}. Please complete registration.`);
+        (error as any).isNewUser = true;
+        (error as any).userData = { email, name, picture };
+        throw error;
     }
 
     let userId: string = "";
@@ -193,4 +182,15 @@ export const resetPassword = async (emailInput: string, role: Role, otp: string,
 
     resetOtpStore.delete(key);
     return { message: "Password updated successfully." };
+};
+
+export const checkEmailExists = async (emailInput: string, roleInput?: string) => {
+    const email = (emailInput || "").trim().toLowerCase();
+    if (!email) return { exists: false };
+
+    const role = (roleInput || "patient") as Role;
+    const model = models[role] || models.patient;
+
+    const user = await (model as any).findUnique({ where: { email } });
+    return { exists: !!user, email };
 };
