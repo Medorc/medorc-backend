@@ -111,7 +111,7 @@ export const requestPasswordReset = async (emailInput, role) => {
         throw new Error("Invalid role specified.");
     const user = await model.findUnique({ where: { email } });
     if (!user) {
-        return { message: "If an account exists with that email, a password reset code has been sent." };
+        throw new Error(`No registered ${role} account found with email "${email}". Please verify your email and account type.`);
     }
     // Generate 6-digit OTP code
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -122,8 +122,9 @@ export const requestPasswordReset = async (emailInput, role) => {
     const emailRes = await sendPasswordResetEmail(email, otp, role);
     return {
         message: emailRes.sent
-            ? `A 6-digit verification code has been sent to ${email}. Please check your inbox!`
-            : "A 6-digit verification code has been sent to your email.",
+            ? `A 6-digit verification code has been sent to ${email}. Check your inbox (and Spam folder)!`
+            : `Verification code generated for ${email}.`,
+        otp, // Provided as demo fallback
         emailSent: emailRes.sent
     };
 };
