@@ -18,12 +18,14 @@ async function seedDemoData() {
     ];
     const dataLogsString = logsArray.join("\n");
     if (patient) {
-        console.log(`ℹ️ Patient ${patientEmail} exists. Updating profile details...`);
+        console.log(`ℹ️ Patient ${patientEmail} exists. Updating profile details and database SHC code...`);
         patient = await prisma.patients.update({
             where: { email: patientEmail },
             data: {
                 full_name: "Ilakkiyan J",
                 phone_no: "9876543210",
+                shc_code: "8F92A140",
+                qr_code: "8F92A140",
                 gender: "Male",
                 blood_group: "O+",
                 date_of_birth: new Date("1998-05-15"),
@@ -45,8 +47,8 @@ async function seedDemoData() {
                 password: hashedPassword,
                 full_name: "Ilakkiyan J",
                 phone_no: "9876543210",
-                shc_code: "SHC-ILAKKIYAN-01",
-                qr_code: "QR-ILAKKIYAN-01",
+                shc_code: "SHC-8F92A140",
+                qr_code: "QR-8F92A140",
                 gender: "Male",
                 blood_group: "O+",
                 date_of_birth: new Date("1998-05-15"),
