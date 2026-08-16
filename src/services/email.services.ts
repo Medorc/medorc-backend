@@ -1,12 +1,6 @@
-import { Resend } from "resend";
-
 export const sendPasswordResetEmail = async (toEmail: string, otp: string, role: string) => {
-    const resendApiKey = (process.env.RESEND_API_KEY || "").trim();
-    if (!resendApiKey) {
-        console.error("[RESEND SERVICE NOTICE] RESEND_API_KEY is missing from environment variables.");
-        return { sent: false };
-    }
-    const resend = new Resend(resendApiKey);
+    const brevoApiKey = (process.env.BREVO_API_KEY || "").trim();
+    const senderEmail = process.env.SMTP_USER || "noreply.medorc@gmail.com";
 
     const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
@@ -28,60 +22,36 @@ export const sendPasswordResetEmail = async (toEmail: string, otp: string, role:
     </div>
     `;
 
-    // 1. Try Resend REST API direct to requested recipient
-    try {
-        const { data, error } = await resend.emails.send({
-            from: "Medorc Health Security <onboarding@resend.dev>",
-            to: [toEmail],
-            subject: `🔐 ${otp} is your Medorc Password Reset Code`,
-            html: htmlContent,
-        });
-
-        if (!error && data) {
-            console.log(`[RESEND API SUCCESS] Email delivered directly to ${toEmail}:`, data);
-            return { sent: true };
-        } else if (error) {
-            console.warn(`[RESEND NOTICE] ${error.message}`);
-        }
-    } catch (resendErr) {
-        console.warn(`[RESEND EXCEPTION]`, resendErr);
-    }
-
-    // 2. Fallback: Nodemailer SMTPS Port 465 IPv4 (Can send to ANY email address in the world!)
-    const smtpUser = process.env.SMTP_USER || "noreply.medorc@gmail.com";
-    const smtpPass = process.env.SMTP_PASS || "pqjjirwouvsjhlrq";
-
-    if (smtpUser && smtpPass) {
+    if (brevoApiKey) {
         try {
-            const nodemailer = await import("nodemailer");
-            const dns = await import("dns");
-
-            const transporter = nodemailer.default.createTransport({
-                host: "smtp.gmail.com",
-                port: 465,
-                secure: true,
-                lookup: (hostname: string, options: any, callback: any) => {
-                    dns.lookup(hostname, { family: 4 }, (err, address, family) => {
-                        callback(err, address, family);
-                    });
+            const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+                method: "POST",
+                headers: {
+                    "api-key": brevoApiKey,
+                    "content-type": "application/json",
+                    "accept": "application/json"
                 },
-                tls: { rejectUnauthorized: false, servername: "smtp.gmail.com" },
-                connectionTimeout: 10000,
-                auth: { user: smtpUser, pass: smtpPass.replace(/\s+/g, "") },
-            } as any);
-
-            await transporter.sendMail({
-                from: `"Medorc Health Security" <${smtpUser}>`,
-                to: toEmail,
-                subject: `🔐 ${otp} is your Medorc Password Reset Code`,
-                html: htmlContent,
+                body: JSON.stringify({
+                    sender: { name: "Medorc Health Security", email: senderEmail },
+                    to: [{ email: toEmail }],
+                    subject: `🔐 ${otp} is your Medorc Password Reset Code`,
+                    htmlContent: htmlContent
+                })
             });
 
-            console.log(`[SMTP SMTPS SUCCESS] Email delivered directly to ${toEmail} via Gmail SMTP.`);
-            return { sent: true };
-        } catch (smtpErr) {
-            console.error(`[SMTP ERROR]`, smtpErr);
+            if (response.ok) {
+                const data = await response.json();
+                console.log(`[BREVO API SUCCESS] Email delivered directly to ${toEmail}:`, data);
+                return { sent: true };
+            } else {
+                const errorText = await response.text();
+                console.error(`[BREVO API ERROR] HTTP ${response.status}:`, errorText);
+            }
+        } catch (err) {
+            console.error(`[BREVO EXCEPTION]`, err);
         }
+    } else {
+        console.error(`[BREVO NOTICE] BREVO_API_KEY is missing from environment variables.`);
     }
 
     return { sent: false };
