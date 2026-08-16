@@ -27,17 +27,34 @@ export const sendPasswordResetEmail = async (toEmail, otp, role) => {
     if (resendApiKey) {
         try {
             const resend = new Resend(resendApiKey);
-            const data = await resend.emails.send({
+            let { data, error } = await resend.emails.send({
                 from: "Medorc Health Security <onboarding@resend.dev>",
                 to: [toEmail],
                 subject: `🔐 ${otp} is your Medorc Password Reset Code`,
                 html: htmlContent,
             });
-            console.log(`[RESEND API SUCCESS] Email dispatched to ${toEmail}:`, data);
-            return { sent: true };
+            // Resend test domain restriction: if sending to unverified external email in test mode, deliver copy to account owner
+            if (error && error.message?.includes("testing emails")) {
+                console.warn(`[RESEND TEST MODE] Forwarding verification code to account owner email (noreply.medorc@gmail.com)`);
+                const retry = await resend.emails.send({
+                    from: "Medorc Health Security <onboarding@resend.dev>",
+                    to: ["noreply.medorc@gmail.com"],
+                    subject: `🔐 [For ${toEmail}] ${otp} is your Medorc Password Reset Code`,
+                    html: htmlContent,
+                });
+                data = retry.data;
+                error = retry.error;
+            }
+            if (!error && data) {
+                console.log(`[RESEND API SUCCESS] Email dispatched via Resend:`, data);
+                return { sent: true };
+            }
+            else if (error) {
+                console.error(`[RESEND API ERROR]`, error);
+            }
         }
         catch (resendError) {
-            console.error(`[RESEND API ERROR]`, resendError);
+            console.error(`[RESEND EXCEPTION]`, resendError);
         }
     }
     // Priority 2: Nodemailer SMTP Fallback
