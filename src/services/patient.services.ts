@@ -127,7 +127,18 @@ export const getPatientBasicDetails = async (patient_id?: string, shc_code?: str
             full_name: true,
             email: true,
             phone_no: true,
-            photo: true
+            photo: true,
+            gender: true,
+            blood_group: true,
+            date_of_birth: true,
+            address: true,
+            visibility: true,
+            shc_code: true,
+            qr_code: true,
+            allergy: true,
+            smoking: true,
+            alcoholism: true,
+            exercise: true
         }
     });
     if (!patientBasicDetails) {

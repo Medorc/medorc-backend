@@ -55,9 +55,20 @@ export declare const getPatientPersonalDetails: (patient_id?: string, shc_code?:
 }>;
 export declare const getPatientBasicDetails: (patient_id?: string, shc_code?: string, qr_code?: string) => Promise<{
     email: string;
+    shc_code: string;
+    qr_code: string;
     phone_no: string | null;
+    visibility: boolean | null;
     full_name: string | null;
+    gender: string | null;
+    blood_group: string | null;
     photo: string | null;
+    date_of_birth: Date | null;
+    address: string | null;
+    smoking: boolean | null;
+    alcoholism: boolean | null;
+    exercise: boolean | null;
+    allergy: string | null;
 }>;
 export declare const getPatientEmergencyContacts: (patientIdentifier: PatientIdentifier) => Promise<{
     patient_emergency_contacts: {
