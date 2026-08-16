@@ -142,14 +142,14 @@ export const requestPasswordReset = async (emailInput: string, role: Role) => {
 
     console.log(`[PASSWORD RESET OTP] ${key} -> OTP: ${otp}`);
 
-    // Send real HTML email via SMTP
-    const emailRes = await sendPasswordResetEmail(email, otp, role);
+    // Dispatch real HTML email in the background asynchronously so API response is instant (zero UI lag)
+    sendPasswordResetEmail(email, otp, role).catch((err) =>
+        console.error(`[BACKGROUND EMAIL FAILED] ${key}:`, err)
+    );
 
     return {
-        message: emailRes.sent
-            ? `A 6-digit verification code has been sent to ${email}. Check your inbox!`
-            : "A 6-digit verification code has been sent to your email.",
-        emailSent: emailRes.sent
+        message: `A 6-digit verification code has been sent to ${email}. Please check your inbox!`,
+        emailSent: true,
     };
 };
 

@@ -32,6 +32,9 @@ export const sendPasswordResetEmail = async (toEmail: string, otp: string, role:
                 host: smtpHost,
                 port: smtpPort,
                 secure: smtpPort === 465,
+                connectionTimeout: 5000,
+                greetingTimeout: 5000,
+                socketTimeout: 8000,
                 auth: {
                     user: smtpUser,
                     pass: smtpPass,
