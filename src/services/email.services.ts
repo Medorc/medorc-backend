@@ -4,7 +4,9 @@ export const sendPasswordResetEmail = async (toEmail: string, otp: string, role:
     const smtpUser = process.env.SMTP_USER;
     const smtpPass = process.env.SMTP_PASS;
     const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
-    const smtpPort = Number(process.env.SMTP_PORT) || 587;
+    const portEnv = Number(process.env.SMTP_PORT);
+    const smtpPort = portEnv && !isNaN(portEnv) ? portEnv : 465;
+    const isSecure = smtpPort === 465;
 
     const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded-radius: 12px; background-color: #ffffff;">
@@ -31,14 +33,13 @@ export const sendPasswordResetEmail = async (toEmail: string, otp: string, role:
             const transporter = nodemailer.createTransport({
                 host: smtpHost,
                 port: smtpPort,
-                secure: smtpPort === 465,
-                requireTLS: true,
+                secure: isSecure,
                 tls: {
                     rejectUnauthorized: false
                 },
-                connectionTimeout: 10000,
-                greetingTimeout: 10000,
-                socketTimeout: 15000,
+                connectionTimeout: 15000,
+                greetingTimeout: 15000,
+                socketTimeout: 20000,
                 auth: {
                     user: smtpUser,
                     pass: smtpPass,
