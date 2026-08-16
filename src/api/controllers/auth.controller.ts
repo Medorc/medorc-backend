@@ -6,38 +6,42 @@ import {createHospital} from "../../services/hospital.services.js";
 import {createExtern} from "../../services/extern.services.js";
 
 export const handleLogin = async (req: Request, res: Response) => {
-    try{
-        const {email, password, role} = req.body;
+    try {
+        const { email, password, role } = req.body;
         if (!email || !password || !role) {
             return res.status(400).json({ error: 'Email, password, and role are required.' });
         }
-        const {token} = await authService.login(email,password,role);
+        const { token, shc_code } = await authService.login(email, password, role);
         res.status(200).json({
             message: 'User logged in successfully',
             token,
-            role
+            role,
+            shc_code
         });
-    }catch (err){
-        let errorMessage = 'An unexpected error occurred.';
-
-        // Type Guard: Check if `err` is an Error object
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        }
-
-        if (errorMessage === 'Invalid credentials.') {
-            return res.status(401).json({ error: errorMessage }); // 401 Unauthorized
-        }
-
-        if (errorMessage === 'Invalid user specified.' || errorMessage === 'Invalid role specified.') {
-            return res.status(404).json({ error: errorMessage }); // 404 Not Found
-        }
-
-        // For all other unexpected errors, send a 500
-        console.error(err); // It's good practice to log the actual error on the server
-        res.status(500).json({ error: 'Internal Server Error' });
+    } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
+        return res.status(401).json({ error: errorMessage });
     }
-}
+};
+
+export const handleGoogleAuth = async (req: Request, res: Response) => {
+    try {
+        const { credential, role } = req.body;
+        if (!credential) {
+            return res.status(400).json({ error: "Google credential token is required." });
+        }
+        const result = await authService.googleAuthLogin(credential, role);
+        return res.status(200).json({
+            message: "Google Authentication successful",
+            token: result.token,
+            role: result.role,
+            shc_code: result.shc_code
+        });
+    } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Google authentication failed.";
+        return res.status(400).json({ error: errorMessage });
+    }
+};
 
 
 export const handleSignup = async(req: Request,res: Response)=>{
