@@ -131,3 +131,66 @@ export const googleAuthLogin = async (credentialToken: string, roleInput?: Role)
 
     return { token, role, shc_code, user };
 };
+
+// Store OTP reset codes in-memory with 10-minute expiration
+const resetOtpStore = new Map<string, { otp: string; expiresAt: number }>();
+
+export const requestPasswordReset = async (emailInput: string, role: Role) => {
+    const email = (emailInput || "").trim().toLowerCase();
+    const model: UserModel = models[role];
+    if (!model) throw new Error("Invalid role specified.");
+
+    const user = await (model as any).findUnique({ where: { email } });
+    if (!user) {
+        return { message: "If an account exists with that email, a password reset code has been sent." };
+    }
+
+    // Generate 6-digit OTP code
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const key = `${role}:${email}`;
+    resetOtpStore.set(key, { otp, expiresAt: Date.now() + 10 * 60 * 1000 });
+
+    console.log(`[PASSWORD RESET OTP] ${key} -> OTP: ${otp}`);
+
+    return {
+        message: "Password reset OTP code generated successfully.",
+        otp, // Included for instant demo convenience
+    };
+};
+
+export const resetPassword = async (emailInput: string, role: Role, otp: string, newPassword: string) => {
+    const email = (emailInput || "").trim().toLowerCase();
+    const model: UserModel = models[role];
+    if (!model) throw new Error("Invalid role specified.");
+
+    if (!newPassword || newPassword.length < 8) {
+        throw new Error("New password must be at least 8 characters long.");
+    }
+
+    const key = `${role}:${email}`;
+    const record = resetOtpStore.get(key);
+
+    if (!record || record.otp !== otp.trim()) {
+        throw new Error("Invalid or expired reset OTP code.");
+    }
+
+    if (Date.now() > record.expiresAt) {
+        resetOtpStore.delete(key);
+        throw new Error("Reset OTP code has expired. Please request a new code.");
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    if (role === "patient") {
+        await prisma.patients.update({ where: { email }, data: { password: hashedPassword } });
+    } else if (role === "doctor") {
+        await prisma.doctors.update({ where: { email }, data: { password: hashedPassword } });
+    } else if (role === "hospital") {
+        await prisma.hospitals.update({ where: { email }, data: { password: hashedPassword } });
+    } else if (role === "extern") {
+        await prisma.external_viewers.update({ where: { email }, data: { password: hashedPassword } });
+    }
+
+    resetOtpStore.delete(key);
+    return { message: "Password updated successfully." };
+};

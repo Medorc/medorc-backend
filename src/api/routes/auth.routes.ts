@@ -7,5 +7,7 @@ const authRoute = Router();
 authRoute.post("/signin", authLimiter, authController.handleLogin);
 authRoute.post("/signup", authLimiter, authController.handleSignup);
 authRoute.post("/google", authLimiter, authController.handleGoogleAuth);
+authRoute.post("/forgot-password", authLimiter, authController.handleForgotPassword);
+authRoute.post("/reset-password", authLimiter, authController.handleResetPassword);
 
 export default authRoute;

@@ -43,6 +43,34 @@ export const handleGoogleAuth = async (req: Request, res: Response) => {
     }
 };
 
+export const handleForgotPassword = async (req: Request, res: Response) => {
+    try {
+        const { email, role } = req.body;
+        if (!email || !role) {
+            return res.status(400).json({ error: "Email and role are required." });
+        }
+        const result = await authService.requestPasswordReset(email, role);
+        return res.status(200).json(result);
+    } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to request password reset.";
+        return res.status(400).json({ error: errorMessage });
+    }
+};
+
+export const handleResetPassword = async (req: Request, res: Response) => {
+    try {
+        const { email, role, otp, newPassword } = req.body;
+        if (!email || !role || !otp || !newPassword) {
+            return res.status(400).json({ error: "Email, role, OTP code, and new password are required." });
+        }
+        const result = await authService.resetPassword(email, role, otp, newPassword);
+        return res.status(200).json(result);
+    } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to reset password.";
+        return res.status(400).json({ error: errorMessage });
+    }
+};
+
 
 export const handleSignup = async(req: Request,res: Response)=>{
     try {
