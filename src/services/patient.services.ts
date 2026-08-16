@@ -469,7 +469,7 @@ export const addPatientDataLog = async (
         throw new Error("Patient not found for logging.");
     }
 
-    const existingLogs = patient.data_logs ? patient.data_logs.split(',').filter(log => log) : [];
+    const existingLogs = patient.data_logs ? patient.data_logs.split(/[\n,]+/).map(log => log.trim()).filter(Boolean) : [];
 
     existingLogs.unshift(newLogEntry);
 
@@ -478,7 +478,7 @@ export const addPatientDataLog = async (
     await prisma.patients.update({
         where: whereClause,
         data: {
-            data_logs: updatedLogs.join(','),
+            data_logs: updatedLogs.join('\n'),
         },
     });
 };
