@@ -24,9 +24,10 @@ export const sendPasswordResetEmail = async (toEmail, otp, role) => {
     </div>
     `;
     // Priority 1: Resend HTTPS REST API (Port 443 - 100% Reliable on Render/Cloud)
-    if (resendApiKey) {
+    const cleanApiKey = (resendApiKey || "").trim();
+    if (cleanApiKey && cleanApiKey.startsWith("re_")) {
         try {
-            const resend = new Resend(resendApiKey);
+            const resend = new Resend(cleanApiKey);
             let { data, error } = await resend.emails.send({
                 from: "Medorc Health Security <onboarding@resend.dev>",
                 to: [toEmail],
@@ -50,11 +51,11 @@ export const sendPasswordResetEmail = async (toEmail, otp, role) => {
                 return { sent: true };
             }
             else if (error) {
-                console.error(`[RESEND API ERROR]`, error);
+                console.error(`[RESEND API NOTICE] Resend error (${error.message || 'invalid key'}), falling back to SMTP...`);
             }
         }
         catch (resendError) {
-            console.error(`[RESEND EXCEPTION]`, resendError);
+            console.error(`[RESEND EXCEPTION] Falling back to SMTP:`, resendError);
         }
     }
     // Priority 2: Nodemailer SMTP Fallback
