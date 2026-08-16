@@ -157,14 +157,15 @@ export const requestPasswordReset = async (emailInput: string, roleInput: Role) 
 
     console.log(`[PASSWORD RESET OTP] ${key} -> OTP: ${otp}`);
 
-    // Dispatch real HTML email in the background asynchronously so API response is instant
-    sendPasswordResetEmail(email, otp, role).catch((err) =>
-        console.error(`[BACKGROUND EMAIL FAILED] ${key}:`, err)
-    );
+    // Attempt real HTML email dispatch via Nodemailer
+    const emailRes = await sendPasswordResetEmail(email, otp, role);
 
     return {
-        message: `A 6-digit verification code has been sent to ${email}. Please check your inbox!`,
-        emailSent: true,
+        message: emailRes.sent
+            ? `A 6-digit verification code has been sent to ${email}. Please check your inbox!`
+            : `A 6-digit verification code has been generated for ${email}.`,
+        otp: emailRes.sent ? undefined : otp, // Provide fallback OTP if cloud host firewall blocks SMTP
+        emailSent: emailRes.sent,
         detectedRole: role
     };
 };
