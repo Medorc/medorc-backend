@@ -15,6 +15,23 @@ Main API server for the **Medorc Platform**. Built with Node.js, Express, TypeSc
 
 ---
 
+## 🌱 Demo Data Seeding
+
+To populate the database with complete demo datasets for all 4 roles (Patient, Doctor, Hospital, External Viewer):
+
+```bash
+npm run seed:demo
+```
+
+This seeds:
+- **Patient**: `ilakkiyanj.pt@medorc.in` / `password123`
+- **Doctor**: `dr.ananya@medorc.in` / `password123`
+- **Hospital**: `apollo@medorc.in` / `password123`
+- **External Viewer**: `diagnostic@medorc.in` / `password123`
+- Emergency contacts, comprehensive medical records, surgery & hospitalization details.
+
+---
+
 ## 🛠 Local Setup
 
 ```bash
