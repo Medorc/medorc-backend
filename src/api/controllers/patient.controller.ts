@@ -46,14 +46,17 @@ export const handleGetPatientProfile = async (req: Request, res: Response) => {
 
                 // We only log if the visitor is NOT the patient themselves
                 if (visitorRole !== "patient") {
-                    let patientIdentifier: PatientIdentifier = {};
-
                     // Re-extract codes for logging scope
                     const shc_code = typeof req.query.shc_code === 'string' ? req.query.shc_code : undefined;
                     const qr_code = typeof req.query.qr_code === 'string' ? req.query.qr_code : undefined;
 
-                    const visitorId = String((userPayload as any).id || "");
-                    const visitorName = await patientService.getVisitorDisplayName(visitorId, visitorRole);
+                    const patientIdentifier: PatientIdentifier = {
+                        patient_id: (patientProfile as any).patient_id,
+                        shc_code: shc_code || (patientProfile as any).shc_code,
+                        qr_code: qr_code || (patientProfile as any).qr_code
+                    };
+
+                    const visitorName = await patientService.getVisitorDisplayName(String(visitorId || ""), visitorRole);
                     const logMessage = `${new Date().toISOString()} - ${visitorRole.toUpperCase()} [${visitorName}] visited your profile`;
 
                     // Fire-and-forget logging
