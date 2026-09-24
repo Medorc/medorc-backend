@@ -162,6 +162,24 @@ async function seedDemoData() {
     });
     console.log(`✅ Created Hospital Accounts: ${hosp1.name}, ${hosp2.name}`);
 
+    // 4b. Create External Viewer Account
+    const externEmail = "diagnostic@medorc.in";
+    let externUser = await prisma.external_viewers.upsert({
+        where: { email: externEmail },
+        update: { full_name: "Dr. K. S. Raman", org_name: "Central Diagnostic Lab" },
+        create: {
+            email: externEmail,
+            password: hashedPassword,
+            full_name: "Dr. K. S. Raman",
+            org_name: "Central Diagnostic Lab",
+            org_type: "Diagnostic Center",
+            org_license_no: "LIC-EXT-301",
+            phone_no: "9876543220",
+            gender: "Male"
+        }
+    });
+    console.log(`✅ Created External Viewer Account: ${externUser.full_name} (${externUser.org_name})`);
+
     // 5. Add Medical Records for Patient
     console.log("🧹 Clearing old medical records for clean demo dataset...");
     await prisma.patient_medical_records.deleteMany({
